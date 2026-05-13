@@ -31,28 +31,28 @@ services:
       timeout: 3s
       retries: 5
 
-  backend:
-    build:
-      context: .
-      dockerfile: apps/backend/Dockerfile
-    container_name: opennotify-backend
-    restart: unless-stopped
-    ports:
-      - "3000:3000"
-    environment:
-      # Attention : on utilise le nom du service "postgres", pas localhost,
-      # et le port interne 5432 (pas 5433 qui est le mapping hôte)
-      DATABASE_URL: "postgresql://opennotify:su2026@postgres:5432/opennotify"
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      API_PORT: 3000
-      API_HOST: 0.0.0.0
-      NODE_ENV: production
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
+  # backend:
+  #   build:
+  #     context: .
+  #     dockerfile: apps/backend/Dockerfile
+  #   container_name: opennotify-backend
+  #   restart: unless-stopped
+  #   ports:
+  #     - "3000:3000"
+  #   environment:
+  #     # Attention : on utilise le nom du service "postgres", pas localhost,
+  #     # et le port interne 5432 (pas 5433 qui est le mapping hôte)
+  #     DATABASE_URL: "postgresql://opennotify:su2026@postgres:5432/opennotify"
+  #     REDIS_HOST: redis
+  #     REDIS_PORT: 6379
+  #     API_PORT: 3000
+  #     API_HOST: 0.0.0.0
+  #     NODE_ENV: production
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #     redis:
+  #       condition: service_healthy
 
 volumes:
   postgres_data:
