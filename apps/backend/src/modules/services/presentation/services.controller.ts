@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Post, Put, Res, HttpException, HttpStatus } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Post, Put, Res, HttpException, HttpStatus, Patch } from '@nestjs/common';
 import { ServicesService } from '../applications/services.service';
 import { CreateServiceDto } from '../applications/dto/create-services.dto';
 import { UpdateServiceDto } from '../applications/dto/update-services.dto';
@@ -12,6 +12,15 @@ export class ServicesController {
         return this.servicesService.findAll();
     }
 
+    @Get(':id')
+    getById(@Res() res, @Body() id: string) {
+        const service = this.servicesService.getServiceById(id);
+        if (!service) {
+            throw new HttpException('Service not found', HttpStatus.NOT_FOUND);
+        }
+        return res.status(HttpStatus.OK).json(service);
+    }
+
     @Post()
     create(@Body() dto: CreateServiceDto) {
         return this.servicesService.insertNewService(dto)
@@ -22,7 +31,7 @@ export class ServicesController {
         return this.servicesService.deleteService(id);
     }
 
-    @Put()
+    @Patch()
     updateService(@Body() dto: UpdateServiceDto) {
         try {
             if (!dto) throw new HttpException('Invalid request body', HttpStatus.BAD_REQUEST);

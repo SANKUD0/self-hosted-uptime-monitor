@@ -2,50 +2,32 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/shared/database/prisma.service';
 import { CreateServiceDto } from './dto/create-services.dto';
 import { UpdateServiceDto } from './dto/update-services.dto';
+import { ServicesRepository } from '../infrastructure/services.repository';
 
 @Injectable()
 export class ServicesService {
-    constructor(private readonly prisma: PrismaService) { }
+    constructor(
+        private readonly servicesRepository: ServicesRepository
+    ) { }
 
     findAll() {
-        return this.prisma.service.findMany({
-            orderBy: { createdAt: 'desc' }
-        });
+        return this.servicesRepository.findAll();
     }
 
     insertNewService(dto: CreateServiceDto) {
-        try {
-            return this.prisma.service.create({
-                data: dto
-            });
-        } catch (error) {
-            console.log('Error inserting new service:', error);
-            return { message: 'Error inserting new service' };
-        }
+        return this.servicesRepository.insertNewService(dto);
     }
 
 
     deleteService(id: string) {
-        try {
-            return this.prisma.service.delete({
-                where: { id }
-            });
-        } catch (error) {
-            console.log('Error deleting service:', error);
-            return { message: 'Error deleting service' };
-        }
+        return this.servicesRepository.deleteService(id);
     }
 
     updateService(dto: UpdateServiceDto) {
-        try {
-            if (!dto.id) throw new Error('Service ID is required for update');
-            return this.prisma.service.update({
-                where: { id: dto.id },
-                data: dto
-            });
-        } catch (error) {
-            console.log('Error updating service:', error);
-            return { message: 'Error updating service' };
-        }
+        return this.servicesRepository.updateService(dto);
+    }
+
+    getServiceById(id: string) {
+        return this.servicesRepository.getServiceById(id);
     }
 }

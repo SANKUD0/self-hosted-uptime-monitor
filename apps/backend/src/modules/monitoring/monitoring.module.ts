@@ -6,12 +6,14 @@ import { PingChecker } from './infrastructure/checkers/ping.checker';
 import { DockerChecker } from './infrastructure/checkers/docker.checker';
 import { CheckProcessor } from './infrastructure/queue/check.processor';
 import { CheckScheduler } from './infrastructure/queue/check.scheduler';
+import { IncidentsModule } from '../incidents/incidents.module';
 
 @Module({
   imports: [
     BullModule.registerQueue({
       name: 'checks',
     }),
+    IncidentsModule,
   ],
   providers: [
     HttpChecker,

@@ -8,6 +8,7 @@ import { PingChecker } from '../checkers/ping.checker';
 import { DockerChecker } from '../checkers/docker.checker';
 import { Checker } from '../../domain/checker.interface';
 import { ServiceType } from '@prisma/client';
+import { IncidentsService } from '../../../incidents/application/incidents.service';
 
 /**
  * Données passées au job
@@ -36,6 +37,7 @@ export class CheckProcessor extends WorkerHost {
     private readonly tcpChecker: TcpChecker,
     private readonly pingChecker: PingChecker,
     private readonly dockerChecker: DockerChecker,
+    private readonly incidentsService: IncidentsService
   ) {
     super();
     // On mappe chaque type vers son checker (pattern Strategy)
@@ -86,5 +88,13 @@ export class CheckProcessor extends WorkerHost {
         error: result.error,
       },
     });
+
+    // Déléguer la logique d'incidents
+    await this.incidentsService.handleCheckResult(
+      service.id,
+      result.status,
+      service.failureThreshold,
+      result.error ?? null,
+    );
   }
 }
