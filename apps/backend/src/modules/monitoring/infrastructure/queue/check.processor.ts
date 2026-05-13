@@ -9,6 +9,7 @@ import { DockerChecker } from '../checkers/docker.checker';
 import { Checker } from '../../domain/checker.interface';
 import { ServiceType } from '@prisma/client';
 import { IncidentsService } from '../../../incidents/application/incidents.service';
+import { MonitoringServiceStateRepository } from '../monitoring-service-state.repository';
 
 /**
  * Données passées au job
@@ -37,7 +38,8 @@ export class CheckProcessor extends WorkerHost {
     private readonly tcpChecker: TcpChecker,
     private readonly pingChecker: PingChecker,
     private readonly dockerChecker: DockerChecker,
-    private readonly incidentsService: IncidentsService
+    private readonly incidentsService: IncidentsService,
+    private readonly monitoringServiceStateRepository: MonitoringServiceStateRepository,
   ) {
     super();
     // On mappe chaque type vers son checker (pattern Strategy)
@@ -96,5 +98,49 @@ export class CheckProcessor extends WorkerHost {
       service.failureThreshold,
       result.error ?? null,
     );
+
+    // 5. Mettre à jour le dernier état du service (UP/DOWN) pour affichage rapide
+    // Transaction pour éviter les conflits de mise à jour concurrente entre le CheckProcessor et la route GET /services/:id qui lit aussi ServiceState
+    await this.prisma.$transaction(async (tx) => {
+      const currentStateService = await tx.serviceState.findUnique({
+        where: { serviceId: service.id },
+      });
+      // Chercher le check le plus récent pour voir si serviceState et check son identiques, si oui on fait rien, sinon on met à jour le serviceState
+      const latestCheck = await tx.check.findFirst({
+        where: { serviceId: service.id },
+        orderBy: { timestamp: 'desc' },
+      });
+
+      if (latestCheck && currentStateService && latestCheck.id === currentStateService.latestCheckId) {
+        // Si rien n'a changé depuis le dernier check, on ne met pas à jour le serviceState pour éviter les écritures inutiles
+        // Cependant, on met à jour la latence même si le statut n'a pas changé, pour avoir des données de latence à jour dans le dashboard
+        this.monitoringServiceStateRepository.updateLatency(service.id, latestCheck.latencyMs, new Date(), latestCheck.id);
+        return;
+      }
+
+      if (currentStateService) {
+        await tx.serviceState.update({
+          where: { serviceId: service.id },
+          data: {
+            status: result.status,
+            latestCheckId: latestCheck?.id,
+            latencyMs: result.latencyMs,
+            statusCode: result.statusCode,
+            error: result.error,
+          },
+        });
+      } else {
+        await tx.serviceState.create({
+          data: {
+            service: { connect: { id: service.id } },
+            status: result.status,
+            latencyMs: result.latencyMs,
+            statusCode: result.statusCode,
+            error: result.error,
+            latestCheckId: latestCheck?.id,
+          },
+        });
+      }
+    });
   }
 }

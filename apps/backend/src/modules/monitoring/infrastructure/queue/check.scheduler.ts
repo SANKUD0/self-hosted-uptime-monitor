@@ -8,6 +8,8 @@ import { CheckJobData } from './check.processor';
  * Au démarrage de l'app, lit tous les services activés
  * et crée un job récurrent pour chacun selon leur intervalSeconds.
  */
+
+// TODO: si dans service on change l'intervalSeconds, Timeout, failureThreshold, etc, il faudrait que le scheduler puisse mettre à jour le job récurrent correspondant (actuellement il ne gère que la création et la suppression de jobs). On peut faire ça en exposant une méthode publique updateSchedule(serviceId: string, newInterval: number) qui supprimerait l'ancien job et en recréerait un nouveau avec le nouvel intervalle.
 @Injectable()
 export class CheckScheduler implements OnModuleInit {
   private readonly logger = new Logger(CheckScheduler.name);

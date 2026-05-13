@@ -7,8 +7,12 @@ import { DockerChecker } from './infrastructure/checkers/docker.checker';
 import { CheckProcessor } from './infrastructure/queue/check.processor';
 import { CheckScheduler } from './infrastructure/queue/check.scheduler';
 import { IncidentsModule } from '../incidents/incidents.module';
+import { MonitoringServiceStateRepository } from './infrastructure/monitoring-service-state.repository';
+import { MonitoringService } from './application/monitoring.service';
+import { MonitoringController } from './presentation/monitoring.controller';
 
 @Module({
+  controllers: [MonitoringController],
   imports: [
     BullModule.registerQueue({
       name: 'checks',
@@ -22,6 +26,8 @@ import { IncidentsModule } from '../incidents/incidents.module';
     DockerChecker,
     CheckProcessor,
     CheckScheduler,
+    MonitoringServiceStateRepository,
+    MonitoringService,
   ],
 })
 export class MonitoringModule {}

@@ -22,12 +22,7 @@ export class IncidentsService {
    * @param failureThreshold - Nombre d'échecs consécutifs avant incident
    * @param errorMessage - Message d'erreur si applicable
    */
-  async handleCheckResult(
-    serviceId: string,
-    status: CheckStatus,
-    failureThreshold: number,
-    errorMessage: string | null,
-  ): Promise<void> {
+  async handleCheckResult(serviceId: string, status: CheckStatus, failureThreshold: number, errorMessage: string | null,): Promise<void> {
     const openIncident = await this.repository.findOpenIncident(serviceId);
 
     // CAS 1 : Le service est UP
@@ -60,6 +55,10 @@ export class IncidentsService {
       await this.repository.openIncident(serviceId, errorMessage);
       this.logger.warn(
         `🔴 Incident ouvert pour service ${serviceId} (${consecutiveFailures} échecs consécutifs)`,
+      );
+    } else if (consecutiveFailures > 0) {
+      this.logger.warn(
+        `⚠️ Service ${serviceId} : ${consecutiveFailures}/${failureThreshold} échecs consécutifs`,
       );
     }
   }
