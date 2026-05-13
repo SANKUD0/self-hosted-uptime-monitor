@@ -35,11 +35,11 @@ export class ServicesRepository {
         }
     }
 
-    updateService(dto: UpdateServiceDto) {
+    updateService(dto: UpdateServiceDto, id : string) {
         try {
-            if (!dto.id) throw new Error('Service ID is required for update');
+            if (!id) throw new Error('Service ID is required for update');
             return this.prisma.service.update({
-                where: { id: dto.id },
+                where: { id },
                 data: dto
             });
         } catch (error) {
@@ -51,6 +51,18 @@ export class ServicesRepository {
     getServiceById(id: string) {
         return this.prisma.service.findUnique({
             where: { id }
+        });
+    }
+
+    getChecksById(id: string) {
+        return this.prisma.check.findMany({
+            where: { serviceId: id }
+        });
+    }
+
+    async getIncidentsById(id: string) {
+        return this.prisma.incident.findMany({
+            where: { serviceId: id }
         });
     }
 }

@@ -3,7 +3,7 @@ import { PrismaService } from '../../../shared/database/prisma.service';
 
 @Injectable()
 export class IncidentsRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   /**
    * Trouve l'incident ouvert (non résolu) pour un service.
@@ -62,5 +62,21 @@ export class IncidentsRepository {
     }
 
     return consecutiveFailures;
+  }
+  
+  /**
+   * Récupère tous les incidents, avec leurs détails (service, timestamps, etc).
+   * 
+   * @returns  Une liste d'incidents.
+   * @throws Error si la requête échoue.
+   * 
+   * Note : Cette méthode peut être utilisée pour afficher un tableau de bord des incidents.
+   */
+  async findAllIncidents() {
+    try {
+      return await this.prisma.incident.findMany();
+    } catch (error) {
+      throw new Error(`Failed to fetch incidents: ${error}`);
+    }
   }
 }

@@ -23,11 +23,22 @@ export class ServicesService {
         return this.servicesRepository.deleteService(id);
     }
 
-    updateService(dto: UpdateServiceDto) {
-        return this.servicesRepository.updateService(dto);
+    updateService(dto: UpdateServiceDto, id: string) {
+        return this.servicesRepository.updateService(dto, id);
     }
 
     getServiceById(id: string) {
         return this.servicesRepository.getServiceById(id);
+    }
+
+    // checks
+    getChecksById(id: string) {
+        return this.servicesRepository.getChecksById(id);
+    }
+
+
+    // incidents
+    async getIncidentsById(id: string) {
+        return this.servicesRepository.getIncidentsById(id);
     }
 }

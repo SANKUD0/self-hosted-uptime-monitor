@@ -12,7 +12,7 @@ import { IncidentsRepository } from '../infrastructure/incidents.repository';
 export class IncidentsService {
   private readonly logger = new Logger(IncidentsService.name);
 
-  constructor(private readonly repository: IncidentsRepository) {}
+  constructor(private readonly repository: IncidentsRepository) { }
 
   /**
    * Logique métier déclenchée après un check.
@@ -44,7 +44,7 @@ export class IncidentsService {
     }
 
     // CAS 2 : Le service est DOWN/TIMEOUT
-    
+
     // Si un incident est déjà ouvert, on ne fait rien (pas de doublon)
     if (openIncident) {
       return;
@@ -62,5 +62,16 @@ export class IncidentsService {
         `🔴 Incident ouvert pour service ${serviceId} (${consecutiveFailures} échecs consécutifs)`,
       );
     }
+  }
+
+  /**
+   *  Récupère tous les incidents, avec leurs détails (service, timestamps, etc).
+   * @returns  Une liste d'incidents.
+   * @throws Error si la requête échoue.
+   * 
+   * Note : Cette méthode peut être utilisée pour afficher un tableau de bord des incidents.
+   */
+  async findAllIncidents() {
+    return this.repository.findAllIncidents();
   }
 }
