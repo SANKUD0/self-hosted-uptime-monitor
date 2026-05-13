@@ -24,6 +24,7 @@ model Service {
 
   checks    Check[]
   incidents Incident[]
+  state     ServiceState?
 
   @@index([enabled])
 }
@@ -74,4 +75,19 @@ enum CheckStatus {
   UP
   DOWN
   TIMEOUT
+}
+
+
+// =====================================================
+// Current state of the service (non historique, juste le dernier résultat)
+// =====================================================
+model ServiceState {
+  id         String      @id @default(cuid())
+  serviceId  String      @unique
+  service    Service     @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  status     CheckStatus
+  latencyMs  Int?
+  statusCode Int?
+  error      String?
+  updatedAt  DateTime    @updatedAt
 }
