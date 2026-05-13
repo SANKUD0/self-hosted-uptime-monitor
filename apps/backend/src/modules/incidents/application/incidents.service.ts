@@ -56,10 +56,6 @@ export class IncidentsService {
       this.logger.warn(
         `🔴 Incident ouvert pour service ${serviceId} (${consecutiveFailures} échecs consécutifs)`,
       );
-    } else if (consecutiveFailures > 0) {
-      this.logger.warn(
-        `⚠️ Service ${serviceId} : ${consecutiveFailures}/${failureThreshold} échecs consécutifs`,
-      );
     }
   }
 
