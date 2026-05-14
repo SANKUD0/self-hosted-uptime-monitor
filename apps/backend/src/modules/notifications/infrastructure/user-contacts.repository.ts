@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../shared/database/prisma.service';
-import { ContactType, CellphoneProvider } from '@prisma/client';
+import { ContactType } from '@prisma/client';
 
 @Injectable()
 export class UserContactsRepository {
@@ -26,7 +26,6 @@ export class UserContactsRepository {
     label: string;
     type: ContactType;
     value: string;
-    provider?: CellphoneProvider | null;
   }) {
     return this.prisma.userContact.create({ data });
   }
@@ -37,7 +36,6 @@ export class UserContactsRepository {
       label: string;
       type: ContactType;
       value: string;
-      provider: CellphoneProvider | null;
       enabled: boolean;
     }>,
   ) {

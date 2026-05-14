@@ -1,10 +1,10 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { UserContactsRepository } from '../infrastructure/user-contacts.repository';
 import { EmailNotifier } from '../infrastructure/notifiers/email.notifier';
-import { SmsNotifier } from '../infrastructure/notifiers/sms.notifier';
 import { NotificationPayload } from '../domain/notifier.interface';
 import { CreateUserContactDto } from './dto/create-user-contact.dto';
 import { UpdateUserContactDto } from './dto/update-user-contact.dto';
+import { DiscordNotifier } from '../infrastructure/notifiers/discord.notifier';
 
 @Injectable()
 export class NotificationsService {
@@ -13,8 +13,8 @@ export class NotificationsService {
   constructor(
     private readonly repository: UserContactsRepository,
     private readonly emailNotifier: EmailNotifier,
-    private readonly smsNotifier: SmsNotifier,
-  ) {}
+    private readonly discordNotifier: DiscordNotifier
+  ) { }
 
   // ============================================
   // CRUD pour les UserContact
@@ -33,15 +33,10 @@ export class NotificationsService {
   }
 
   create(dto: CreateUserContactDto) {
-    // Validation : si SMS, provider obligatoire
-    if (dto.type === 'SMS' && !dto.provider) {
-      throw new Error('Le provider est obligatoire pour un contact SMS');
-    }
     return this.repository.create({
       label: dto.label,
       type: dto.type,
       value: dto.value,
-      provider: dto.provider ?? null,
     });
   }
 
@@ -65,7 +60,7 @@ export class NotificationsService {
    */
   async notifyAll(payload: NotificationPayload): Promise<void> {
     const contacts = await this.repository.findAllEnabled();
-    
+
     this.logger.log(`Envoi de notif à ${contacts.length} contact(s)`);
 
     await Promise.allSettled(
@@ -78,20 +73,15 @@ export class NotificationsService {
       id: string;
       type: string;
       value: string;
-      provider: string | null;
     },
     payload: NotificationPayload,
   ): Promise<void> {
     try {
       if (contact.type === 'EMAIL') {
         await this.emailNotifier.send(contact.value, payload);
-      } else if (contact.type === 'SMS') {
-        if (!contact.provider) {
-          this.logger.warn(`Contact SMS ${contact.id} sans provider, skip`);
-          return;
-        }
-        const recipient = `${contact.value}|${contact.provider}`;
-        await this.smsNotifier.send(recipient, payload);
+      } else if (contact.type === 'DISCORD') {
+        // contact.value = URL du webhook Discord
+        await this.discordNotifier.send(contact.value, payload);
       }
     } catch (err) {
       this.logger.error(`Erreur d'envoi pour contact ${contact.id}`, err);
