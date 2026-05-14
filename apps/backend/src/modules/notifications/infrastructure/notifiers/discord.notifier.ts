@@ -26,11 +26,11 @@ export class DiscordNotifier implements Notifier {
             timestamp: new Date().toISOString(),
           },
         ],
-        content: isAlert ? '@everyone' : undefined,
-        // CRUCIAL : autorise les mentions @everyone depuis le webhook
-        allowed_mentions: {
-          parse: ['everyone'],
-        },
+        // content: isAlert ? '@everyone' : undefined,
+        // // CRUCIAL : autorise les mentions @everyone depuis le webhook
+        // allowed_mentions: {
+        //   parse: ['everyone'],
+        // },
       }),
     });
 
