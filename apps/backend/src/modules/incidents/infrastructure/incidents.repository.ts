@@ -79,4 +79,13 @@ export class IncidentsRepository {
       throw new Error(`Failed to fetch incidents: ${error}`);
     }
   }
+
+  async findServiceByIncidentId(id: string) {
+    try {
+      const service = await this.prisma.service.findUnique({ where: { id }});
+      return service;
+    } catch (error) {
+      throw new Error(`Failed to fetch service for incident with id ${id}: ${error}`);
+    }
+  }
 }

@@ -4,6 +4,8 @@ import { BullModule } from '@nestjs/bullmq';
 import { PrismaModule } from './shared/database/prisma.module';
 import { ServicesModule } from './modules/services/services.module';
 import { MonitoringModule } from './modules/monitoring/monitoring.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
+import { IncidentsModule } from './modules/incidents/incidents.module';
 
 @Module({
   imports: [
@@ -17,6 +19,8 @@ import { MonitoringModule } from './modules/monitoring/monitoring.module';
     PrismaModule,
     ServicesModule,
     MonitoringModule,
+    IncidentsModule,
+    NotificationsModule
   ],
 })
 export class AppModule {}

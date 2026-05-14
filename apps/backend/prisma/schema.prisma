@@ -14,7 +14,7 @@ model Service {
   id               String      @id @default(cuid())
   name             String
   type             ServiceType
-  target           String      // URL pour HTTP, host:port pour TCP, etc.
+  target           String // URL pour HTTP, host:port pour TCP, etc.
   intervalSeconds  Int         @default(60)
   timeoutMs        Int         @default(5000)
   failureThreshold Int         @default(3)
@@ -77,18 +77,51 @@ enum CheckStatus {
   TIMEOUT
 }
 
-
 // =====================================================
 // Current state of the service (non historique, juste le dernier résultat)
 // =====================================================
 model ServiceState {
-  id         String      @id @default(cuid())
-  serviceId  String      @unique
-  service    Service     @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  id            String      @id @default(cuid())
+  serviceId     String      @unique
+  service       Service     @relation(fields: [serviceId], references: [id], onDelete: Cascade)
   latestCheckId String?
-  status     CheckStatus
-  latencyMs  Int?
-  statusCode Int?
-  error      String?
-  updatedAt  DateTime    @updatedAt
+  status        CheckStatus
+  latencyMs     Int?
+  statusCode    Int?
+  error         String?
+  updatedAt     DateTime    @updatedAt
+}
+
+// =====================================================
+// UserContact : les moyens de contacter pour les alertes
+// =====================================================
+model UserContact {
+  id        String      @id @default(cuid())
+  label     String      // ex: "Mon iPhone perso", "Email principal"
+  type      ContactType
+  value     String      // email pour EMAIL, numéro 10 chiffres pour SMS
+  provider  CellphoneProvider? // requis si type=SMS, null sinon
+  enabled   Boolean     @default(true)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@index([type, enabled])
+}
+
+enum ContactType {
+  EMAIL
+  SMS
+}
+
+enum CellphoneProvider {
+  BELL
+  VIDEOTRON
+  ROGERS
+  TELUS
+  KOODO
+  FIDO
+  PUBLIC_MOBILE
+  LUCKY_MOBILE
+  FREEDOM
+  CHATR
 }
