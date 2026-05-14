@@ -100,7 +100,6 @@ model UserContact {
   label     String      // ex: "Mon iPhone perso", "Email principal"
   type      ContactType
   value     String      // email pour EMAIL, numéro 10 chiffres pour SMS
-  provider  CellphoneProvider? // requis si type=SMS, null sinon
   enabled   Boolean     @default(true)
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
@@ -110,18 +109,6 @@ model UserContact {
 
 enum ContactType {
   EMAIL
-  SMS
+  DISCORD
 }
 
-enum CellphoneProvider {
-  BELL
-  VIDEOTRON
-  ROGERS
-  TELUS
-  KOODO
-  FIDO
-  PUBLIC_MOBILE
-  LUCKY_MOBILE
-  FREEDOM
-  CHATR
-}
