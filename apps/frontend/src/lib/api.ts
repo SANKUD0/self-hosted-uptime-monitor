@@ -20,11 +20,13 @@ export type servicesMonitoringResponse = {
     service: {
         name: string;
         type: string;
+        target: string;
     },
     status: string;
     statusCode: number | null;
     error: string | null;
     updatedAt: string;
+    latencyMs: number | null;
 }
 
 
