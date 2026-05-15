@@ -15,6 +15,18 @@ export type CountIncidentsResponse = {
     count: number;
 }
 
+export type servicesMonitoringResponse = {
+    id: string;
+    service: {
+        name: string;
+        type: string;
+    },
+    status: string;
+    statusCode: number | null;
+    error: string | null;
+    updatedAt: string;
+}
+
 
 
 export const api = {
@@ -49,7 +61,7 @@ export const api = {
     monitoring: {
         getAll: () => fetch(`${BASE_URL}/monitoring`).then(res => {
             if (!res.ok) throw new Error(`HTTP ${res.status} `);
-            return res.json()
+            return res.json() as Promise<servicesMonitoringResponse[]>
         }),
     }
 }
