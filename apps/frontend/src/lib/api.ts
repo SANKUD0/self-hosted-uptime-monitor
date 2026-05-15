@@ -29,6 +29,16 @@ export type servicesMonitoringResponse = {
     latencyMs: number | null;
 }
 
+export type incidentsResponse = {
+    id: string;
+    startedAt: string;
+    resolvedAt: string | null;
+    reason: string;
+    service: {
+        name: string;
+    }
+}
+
 
 
 export const api = {
@@ -53,7 +63,7 @@ export const api = {
     incidents: {
         getAll: () => fetch(`${BASE_URL}/incidents`).then(res => {
             if (!res.ok) throw new Error(`HTTP ${res.status} `);
-            return res.json()
+            return res.json() as Promise<incidentsResponse[]>
         }),
         getCount: () => fetch(`${BASE_URL}/incidents/count/open`).then(res => {
             if (!res.ok) throw new Error(`HTTP ${res.status} `);
