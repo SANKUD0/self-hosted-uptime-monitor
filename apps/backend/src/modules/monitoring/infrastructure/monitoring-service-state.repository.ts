@@ -77,6 +77,7 @@ export class MonitoringServiceStateRepository {
                     select: {
                         name: true,
                         type: true,
+                        target: true,
                     }
                 }
             }
@@ -94,6 +95,7 @@ export class MonitoringServiceStateRepository {
                     select: {
                         name: true,
                         type: true,
+                        target: true,
                     }
                 }
             }
