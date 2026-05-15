@@ -1,7 +1,8 @@
 "use client";
 
 import { StatCard } from "@/components/StatCard";
-import { Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { api, servicesMonitoringResponse } from "@/lib/api";
 import { useEffect, useState } from "react";
 
@@ -47,58 +48,104 @@ export default function Home() {
     return () => clearInterval(interval);
   }, []);
 
+  const sortedMonitoring = [...monitoringData].sort((a, b) => {
+    if (a.status === "DOWN" && b.status !== "DOWN") return -1;
+    if (a.status !== "DOWN" && b.status === "DOWN") return 1;
+    return a.service.name.localeCompare(b.service.name);
+  });
+
   return (
-    <div className={`m-10`}>
-      <div className="grid grid-cols-4 gap-5 mb-4  text-center">
+    <div className="m-10">
+      <div className="grid grid-cols-4 gap-5 mb-6 text-center">
         <StatCard title="Registered Services" value={count} error={errorCount} />
         <StatCard title="Services UP" value={up} error={errorUp} />
         <StatCard title="Services DOWN" value={down} error={errorDown} />
         <StatCard title="Incidents OPEN" value={incidents} error={errorIncidents} />
       </div>
-      <div className={`w-full ${errorMonitoring ? "p-4" : ""}`}>
+      <div className="w-full">
         {errorMonitoring ? (
-          <p className="text-sm text-destructive text-center">{errorMonitoring}</p>
+          <p className="text-sm text-destructive text-center p-4">{errorMonitoring}</p>
         ) : (
           <Card>
             <CardHeader>
-              <CardTitle>Services monitoring</CardTitle>
-              <CardDescription>Latest updates for all services</CardDescription>
+              <CardTitle>Services Monitoring</CardTitle>
+              <CardDescription>Latest status for all services — refreshed every 30s</CardDescription>
             </CardHeader>
-            <CardContent className="overflow-auto">
-              <table className="w-full table-auto">
-                <thead>
-                  <tr>
-                    <th className="border px-4 py-2">Service Name</th>
-                    <th className="border px-4 py-2">Type</th>
-                    <th className="border px-4 py-2">Status</th>
-                    <th className="border px-4 py-2">Status Code</th>
-                    <th className="border px-4 py-2">Error</th>
-                    <th className="border px-4 py-2">Last Checked</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {monitoringData.map((entry) => (
-                    <tr key={entry.id}>
-                      <td className="border px-4 py-2">{entry.service.name}</td>
-                      <td className="border px-4 py-2">{entry.service.type}</td>
-                      <td className={`border px-4 py-2 font-bold ${entry.status === "UP" ? "text-green-500" : "text-red-500"}`}>
-                        {entry.status}
-                      </td>
-                      <td className="border px-4 py-2">{entry.statusCode !== null ? <div>HTTP {entry.statusCode}</div> : "N/A"}</td>
-                      <td className="border px-4 py-2">
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Service</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Target</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Latency</TableHead>
+                    <TableHead>HTTP Code</TableHead>
+                    <TableHead>Error</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {sortedMonitoring.map((entry) => (
+                    <TableRow key={entry.id} className={entry.status === "DOWN" ? "bg-red-500/5" : ""}>
+                      <TableCell className="font-medium">{entry.service.name}</TableCell>
+                      <TableCell className="text-muted-foreground">{entry.service.type}</TableCell>
+                      <TableCell className="text-muted-foreground font-mono text-xs">{entry.service.target}</TableCell>
+                      <TableCell>
+                        <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${entry.status === "UP"
+                            ? "bg-green-500/15 text-green-600"
+                            : "bg-red-500/15 text-red-600"
+                          }`}>
+                          <span className={`h-1.5 w-1.5 rounded-full ${entry.status === "UP" ? "bg-green-500" : "bg-red-500"}`} />
+                          {entry.status}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {entry.latencyMs !== null ? `${entry.latencyMs} ms` : "—"}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {entry.statusCode !== null ? `HTTP ${entry.statusCode}` : "—"}
+                      </TableCell>
+                      <TableCell>
                         {entry.error
-                          ? <span className="text-yellow-500 font-medium">{entry.error}</span>
-                          : <span className="text-green-500">✓</span>
+                          ? <span className="text-yellow-600 text-xs">{entry.error}</span>
+                          : <span className="text-green-500 text-base">✓</span>
                         }
-                      </td>
-                      <td className="border px-4 py-2">{new Date(entry.updatedAt).toLocaleString()}</td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </CardContent>
           </Card>
         )}
+      </div>
+      <div className={`w-full pt-6`}>
+        <Card>
+          <CardHeader>
+            <CardTitle>Recents Incidents</CardTitle>
+            <CardDescription>Latest incidents — refreshed every 30s</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Service</TableHead>
+                  <TableHead>Reason</TableHead>
+                  <TableHead>Start</TableHead>
+                  <TableHead>End</TableHead>
+                  <TableHead>Duration</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {sortedMonitoring.map((entry) => (
+                  <TableRow key={entry.id} className={entry.status === "DOWN" ? "bg-red-500/5" : ""}>
+                    
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
