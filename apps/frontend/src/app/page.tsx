@@ -147,7 +147,7 @@ export default function Home() {
                         {entry.latencyMs !== null ? `${entry.latencyMs} ms` : "—"}
                       </TableCell>
                       <TableCell className="text-muted-foreground">
-                        {entry.statusCode !== null ? `HTTP ${entry.statusCode}` : "—"}
+                        {entry.statusCode !== null ? `${entry.statusCode}` : "—"}
                       </TableCell>
                       <TableCell>
                         {entry.error

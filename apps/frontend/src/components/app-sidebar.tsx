@@ -13,6 +13,9 @@ import {
 } from "@/components/ui/sidebar"
 import { LayoutGrid } from "lucide-react"
 import Link from "next/link"
+import { Icon } from "@iconify/react";
+
+<Icon icon="material-symbols:space-dashboard-2-outline" />
 
 export function AppSidebar() {
     return (
@@ -26,6 +29,7 @@ export function AppSidebar() {
                             <SidebarMenuItem>
                                 <SidebarMenuButton asChild>
                                     <Link href="/">
+                                        <Icon icon="material-symbols:space-dashboard-2-outline" height="1em" />
                                         <span>Dashboard</span>
                                     </Link>
                                 </SidebarMenuButton>
@@ -33,6 +37,7 @@ export function AppSidebar() {
                             <SidebarMenuItem>
                                 <SidebarMenuButton asChild>
                                     <Link href="/services">
+                                        <Icon icon="mdi:server-outline" height="1em" />
                                         <span>Services</span>
                                     </Link>
                                 </SidebarMenuButton>
@@ -40,6 +45,7 @@ export function AppSidebar() {
                             <SidebarMenuItem>
                                 <SidebarMenuButton asChild>
                                     <Link href="/incidents">
+                                        <Icon icon="mdi:alert-circle-outline" height="1em" />
                                         <span>Incidents</span>
                                     </Link>
                                 </SidebarMenuButton>
