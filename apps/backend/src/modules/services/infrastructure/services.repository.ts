@@ -74,4 +74,16 @@ export class ServicesRepository {
             return null; // ou une valeur par défaut appropriée
         }
     }
+
+    getUpServices() {
+        return this.prisma.serviceState.count({
+            where: { status: 'UP' },
+        });
+    }
+
+    getDownServices() {
+        return this.prisma.serviceState.count({
+            where: { status: 'DOWN' },
+        });
+    }
 }

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, HttpStatus } from '@nestjs/common';
 import { Socket } from 'net';
 import { Checker, CheckResult } from '../../domain/checker.interface';
 
@@ -13,6 +13,7 @@ export class TcpChecker implements Checker {
       return {
         status: 'DOWN',
         latencyMs: 0,
+        statusCode: HttpStatus.SERVICE_UNAVAILABLE,
         error: `Format invalide. Attendu: "host:port", reçu: "${target}"`,
       };
     }
@@ -40,6 +41,7 @@ export class TcpChecker implements Checker {
         finish({
           status: 'UP',
           latencyMs,
+          statusCode: HttpStatus.OK,
         });
       });
 
@@ -49,6 +51,7 @@ export class TcpChecker implements Checker {
         finish({
           status: 'TIMEOUT',
           latencyMs,
+          statusCode: HttpStatus.REQUEST_TIMEOUT,
           error: `Connection timeout après ${timeoutMs}ms`,
         });
       });
@@ -59,6 +62,7 @@ export class TcpChecker implements Checker {
         finish({
           status: 'DOWN',
           latencyMs,
+          statusCode: HttpStatus.SERVICE_UNAVAILABLE,
           error: err.message,
         });
       });

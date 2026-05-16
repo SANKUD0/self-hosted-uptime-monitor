@@ -20,6 +20,18 @@ export class ServicesController {
         return { count };
     }
 
+    @Get('count/up')
+    async getUpServices() {
+        const upServices = await this.servicesService.getUpServices();
+        return { upServices };
+    }
+
+    @Get('count/down')
+    async getDownServices() {
+        const downServices = await this.servicesService.getDownServices();
+        return { downServices };
+    }
+
     @Get(':id')
     getById(@Param('id') id: string) {
         return this.servicesService.getServiceById(id);

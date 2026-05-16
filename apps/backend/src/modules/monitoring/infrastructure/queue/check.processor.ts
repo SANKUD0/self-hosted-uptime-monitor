@@ -125,8 +125,8 @@ export class CheckProcessor extends WorkerHost {
             status: result.status,
             latestCheckId: latestCheck?.id,
             latencyMs: result.latencyMs,
-            statusCode: result.statusCode,
-            error: result.error,
+            statusCode: result.statusCode ?? null,
+            error: result.error ?? null,
           },
         });
       } else {
