@@ -7,7 +7,7 @@ import { UpdateServiceDto } from "../applications/dto/update-services.dto";
 export class ServicesRepository {
     constructor(private readonly prisma: PrismaService) { }
 
-    findAll() {
+      findAll() {
         return this.prisma.service.findMany({
             orderBy: { createdAt: 'desc' }
         });
