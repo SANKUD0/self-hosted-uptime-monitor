@@ -29,5 +29,6 @@ import { MonitoringController } from './presentation/monitoring.controller';
     MonitoringServiceStateRepository,
     MonitoringService,
   ],
+  exports: [CheckScheduler],
 })
 export class MonitoringModule {}

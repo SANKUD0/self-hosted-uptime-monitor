@@ -48,7 +48,7 @@ export class ServicesController {
     }
 
     @Post()
-    create(@Body() dto: CreateServiceDto) {
+    async create(@Body() dto: CreateServiceDto) {
         return this.servicesService.insertNewService(dto)
     }
 
@@ -64,6 +64,16 @@ export class ServicesController {
             return this.servicesService.updateService(dto, id);
         } catch (error) {
             throw new HttpException("Internal server error for updating service", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @Get('cards/info')
+    async getServiceCardsInfo() {
+        try {
+            const info = await this.servicesService.getServiceCardsInfo();
+            return info;
+        } catch (error) {
+            throw new HttpException("Internal server error for fetching service cards info", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 

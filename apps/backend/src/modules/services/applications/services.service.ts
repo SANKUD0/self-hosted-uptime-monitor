@@ -2,19 +2,26 @@ import { Injectable } from '@nestjs/common';
 import { CreateServiceDto } from './dto/create-services.dto';
 import { UpdateServiceDto } from './dto/update-services.dto';
 import { ServicesRepository } from '../infrastructure/services.repository';
+import { CheckScheduler } from '../../monitoring/infrastructure/queue/check.scheduler';
 
 @Injectable()
 export class ServicesService {
     constructor(
-        private readonly servicesRepository: ServicesRepository
+        private readonly servicesRepository: ServicesRepository,
+        private readonly checkScheduler: CheckScheduler,
     ) { }
 
     findAll() {
         return this.servicesRepository.findAll();
     }
 
-    insertNewService(dto: CreateServiceDto) {
-        return this.servicesRepository.insertNewService(dto);
+    async insertNewService(dto: CreateServiceDto) {
+        const service = await this.servicesRepository.insertNewService(dto);
+        if (service && 'id' in service && service.enabled !== false) {
+            await this.checkScheduler.scheduleService(service.id, service.intervalSeconds);
+            await this.checkScheduler.runImmediateCheck(service.id);
+        }
+        return service;
     }
 
 
@@ -39,6 +46,10 @@ export class ServicesService {
     }
     getDownServices() {
         return this.servicesRepository.getDownServices();
+    }
+
+    getServiceCardsInfo() {
+        return this.servicesRepository.getServiceCardsInfo();
     }
 
     // checks

@@ -61,6 +61,22 @@ export class CheckScheduler implements OnModuleInit {
   }
 
   /**
+   * Déclenche un check unique et immédiat pour un service.
+   * À appeler juste après la création d'un service pour obtenir un premier résultat rapidement.
+   */
+  async runImmediateCheck(serviceId: string) {
+    await this.checksQueue.add(
+      'check',
+      { serviceId } as CheckJobData,
+      {
+        removeOnComplete: true,
+        removeOnFail: 50,
+      },
+    );
+    this.logger.log(`Check immédiat déclenché pour service ${serviceId}`);
+  }
+
+  /**
    * Supprime le job récurrent d'un service.
    * À appeler quand un service est supprimé ou désactivé.
    */

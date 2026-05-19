@@ -13,9 +13,9 @@ export class ServicesRepository {
         });
     }
 
-    insertNewService(dto: CreateServiceDto) {
+    async insertNewService(dto: CreateServiceDto) {
         try {
-            return this.prisma.service.create({
+            return await this.prisma.service.create({
                 data: dto
             });
         } catch (error) {
@@ -84,6 +84,22 @@ export class ServicesRepository {
     getDownServices() {
         return this.prisma.serviceState.count({
             where: { status: 'DOWN' },
+        });
+    }
+
+    getServiceCardsInfo() {
+        return this.prisma.serviceState.findMany({
+            select: {
+                status: true,
+                latencyMs: true,
+                service: {
+                    select: {
+                        name: true,
+                        type: true,
+                        intervalSeconds: true,
+                    }
+                }
+            }
         });
     }
 }
