@@ -1,27 +1,46 @@
 import { msToSeconds } from "@/lib/duration";
-import { Card } from "../card";
+import { Card, CardContent, CardHeader } from "../card";
+import StatusBadge from "@/components/status";
+import { Timer, Zap } from "lucide-react";
 
 interface ServicesCardProps {
     services: string;
     type: string;
     latency: number | null;
     intervalSeconds: number;
+    status?: string;
 }
 
-export default function ServicesCard({ services, type, latency, intervalSeconds }: ServicesCardProps) {
+export default function ServicesCard({ services, type, latency, intervalSeconds, status }: ServicesCardProps) {
+    const latencyDisplay = latency != null
+        ? latency >= 1000 ? `${msToSeconds(latency).toFixed(2)} s` : `${latency} ms`
+        : null;
+
+    const isDown = status && status !== "UP";
 
     return (
-        <div>
-            <Card className="w-60">
-                <div className="pl-4">
-                    <h3 className="text-lg font-semibold">{services}</h3>
-                    <p className="text-sm text-muted-foreground">{type}</p>
-                    <div className="w-full grid grid-cols-2 ">
-                        <p className="text-sm text-muted-foreground">{latency != null ? `${latency} ms` : "N/A"}</p>
-                        <p className="text-sm text-muted-foreground"> {intervalSeconds} s/ch</p>
-                    </div>
+        <Card className={`transition-colors ${isDown ? "border-red-500/40 bg-red-500/5" : ""} cursor-pointer` }>
+            <CardHeader className="pb-2">
+                <div className="flex items-start justify-between gap-2">
+                    <p className="font-semibold text-sm leading-tight">{services}</p>
+                    <StatusBadge status={status} />
                 </div>
-            </Card>
-        </div>
+                <span className="inline-flex w-fit items-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                    {type}
+                </span>
+            </CardHeader>
+            <CardContent className="pt-0">
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span className="inline-flex items-center gap-1">
+                        <Zap className="h-3 w-3" />
+                        {latencyDisplay ?? <span className="italic">No data</span>}
+                    </span>
+                    <span className="inline-flex items-center gap-1">
+                        <Timer className="h-3 w-3" />
+                        {intervalSeconds}s
+                    </span>
+                </div>
+            </CardContent>
+        </Card>
     );
 }

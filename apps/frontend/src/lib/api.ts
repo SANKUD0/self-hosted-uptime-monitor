@@ -39,6 +39,16 @@ export type incidentsResponse = {
     }
 }
 
+export type ServicesCardInfo = {
+    status: string;
+    latencyMs: number | null;
+    service: {
+        name: string;
+        type: string;
+        intervalSeconds: number;
+    }
+}
+
 
 
 export const api = {
@@ -58,6 +68,20 @@ export const api = {
         getCountDown: () => fetch(`${BASE_URL}/services/count/down`).then(res => {
             if (!res.ok) throw new Error(`HTTP ${res.status} `);
             return res.json() as Promise<DownServiceResponse>
+        }),
+        getServicesCardsInfos: () => fetch(`${BASE_URL}/services/cards/info`).then(res => {
+            if (!res.ok) throw new Error(`HTTP ${res.status} `);
+            return res.json() as Promise<ServicesCardInfo[]>
+        }),
+        saveNewService: (service: { name: string; type: string; target: string; intervalSeconds: number; timeoutMs: number; failureThreshold: number; enabled: boolean }) => fetch(`${BASE_URL}/services`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(service),
+        }).then(res => {
+            if (!res.ok) throw new Error(`HTTP ${res.status} `);
+            return res.json();
         }),
     },
     incidents: {
