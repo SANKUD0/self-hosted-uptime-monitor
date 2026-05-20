@@ -40,6 +40,7 @@ export default function ServicesPage() {
 
     useEffect(() => {
         fetchServices();
+        window.location.reload();
     }, []);
 
     const handleSubmit = (e: React.FormEvent) => {
