@@ -43,6 +43,7 @@ export type ServicesCardInfo = {
     status: string;
     latencyMs: number | null;
     service: {
+        id: string;
         name: string;
         type: string;
         intervalSeconds: number;
@@ -54,6 +55,10 @@ export type ServicesCardInfo = {
 export const api = {
     services: {
         getAll: () => fetch(`${BASE_URL}/services`).then(res => {
+            if (!res.ok) throw new Error(`HTTP ${res.status} `);
+            return res.json()
+        }),
+        getService: (id: string) => fetch(`${BASE_URL}/services/${id}`).then(res => {
             if (!res.ok) throw new Error(`HTTP ${res.status} `);
             return res.json()
         }),
@@ -75,6 +80,25 @@ export const api = {
         }),
         saveNewService: (service: { name: string; type: string; target: string; intervalSeconds: number; timeoutMs: number; failureThreshold: number; enabled: boolean }) => fetch(`${BASE_URL}/services`, {
             method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(service),
+        }).then(res => {
+            if (!res.ok) throw new Error(`HTTP ${res.status} `);
+            return res.json();
+        }),
+        delete: (id: string) => fetch(`${BASE_URL}/services/${id}`, {
+            method: "DELETE",
+            headers: {
+                "Content-Type": "application/json",
+            },
+        }).then(res => {
+            if (!res.ok) throw new Error(`HTTP ${res.status} `);
+        }),
+        // Patch /services/:id
+        patch: (id: string, service: { name?: string; type?: string; target?: string; intervalSeconds?: number; timeoutMs?: number; failureThreshold?: number; enabled?: boolean }) => fetch(`${BASE_URL}/services/${id}`, {
+            method: "PATCH",
             headers: {
                 "Content-Type": "application/json",
             },
