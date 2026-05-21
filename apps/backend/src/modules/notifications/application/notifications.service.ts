@@ -20,8 +20,8 @@ export class NotificationsService {
   // CRUD pour les UserContact
   // ============================================
 
-  findAll() {
-    return this.repository.findAll();
+  async findAll() {
+    return await this.repository.findAll();
   }
 
   async findOne(id: string) {
@@ -32,8 +32,8 @@ export class NotificationsService {
     return contact;
   }
 
-  create(dto: CreateUserContactDto) {
-    return this.repository.create({
+  async create(dto: CreateUserContactDto) {
+    return await this.repository.create({
       label: dto.label,
       type: dto.type,
       value: dto.value,

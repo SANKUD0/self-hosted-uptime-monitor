@@ -9,8 +9,8 @@ export class IncidentsRepository {
    * Trouve l'incident ouvert (non résolu) pour un service.
    * Retourne null s'il n'y en a pas.
    */
-  findOpenIncident(serviceId: string) {
-    return this.prisma.incident.findFirst({
+  async findOpenIncident(serviceId: string) {
+    return await this.prisma.incident.findFirst({
       where: {
         serviceId,
         resolvedAt: null,
@@ -21,8 +21,8 @@ export class IncidentsRepository {
   /**
    * Ouvre un nouvel incident pour un service.
    */
-  openIncident(serviceId: string, reason: string | null) {
-    return this.prisma.incident.create({
+  async openIncident(serviceId: string, reason: string | null) {
+    return await this.prisma.incident.create({
       data: {
         serviceId,
         reason,
@@ -34,8 +34,8 @@ export class IncidentsRepository {
   /**
    * Marque un incident comme résolu (resolvedAt = now).
    */
-  resolveIncident(incidentId: string) {
-    return this.prisma.incident.update({
+  async resolveIncident(incidentId: string) {
+    return await this.prisma.incident.update({
       where: { id: incidentId },
       data: { resolvedAt: new Date() },
     });

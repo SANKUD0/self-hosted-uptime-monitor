@@ -6,31 +6,31 @@ import { ContactType } from '@prisma/client';
 export class UserContactsRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  findAll() {
-    return this.prisma.userContact.findMany({
+  async findAll() {
+    return await this.prisma.userContact.findMany({
       orderBy: { createdAt: 'desc' },
     });
   }
 
-  findAllEnabled() {
-    return this.prisma.userContact.findMany({
+  async findAllEnabled() {
+    return await this.prisma.userContact.findMany({
       where: { enabled: true },
     });
   }
 
-  findById(id: string) {
-    return this.prisma.userContact.findUnique({ where: { id } });
+  async findById(id: string) {
+    return await this.prisma.userContact.findUnique({ where: { id } });
   }
 
-  create(data: {
+  async create(data: {
     label: string;
     type: ContactType;
     value: string;
   }) {
-    return this.prisma.userContact.create({ data });
+    return await this.prisma.userContact.create({ data });
   }
 
-  update(
+  async update(
     id: string,
     data: Partial<{
       label: string;
@@ -39,13 +39,13 @@ export class UserContactsRepository {
       enabled: boolean;
     }>,
   ) {
-    return this.prisma.userContact.update({
+    return await this.prisma.userContact.update({
       where: { id },
       data,
     });
   }
 
-  delete(id: string) {
-    return this.prisma.userContact.delete({ where: { id } });
+  async delete(id: string) {
+    return await this.prisma.userContact.delete({ where: { id } });
   }
 }

@@ -7,8 +7,8 @@ import { UpdateServiceDto } from "../applications/dto/update-services.dto";
 export class ServicesRepository {
     constructor(private readonly prisma: PrismaService) { }
 
-      findAll() {
-        return this.prisma.service.findMany({
+    async findAll() {
+        return await this.prisma.service.findMany({
             orderBy: { createdAt: 'desc' }
         });
     }
@@ -24,10 +24,10 @@ export class ServicesRepository {
         }
     }
 
-    deleteService(id: string) {
+    async deleteService(id: string) {
         try {
-            return this.prisma.service.delete({
-                where: { id }
+            return await this.prisma.service.delete({
+                where: { id: id}
             });
         } catch (error) {
             console.log('Erreur lors de la suppression du service:', error);
@@ -35,10 +35,10 @@ export class ServicesRepository {
         }
     }
 
-    updateService(dto: UpdateServiceDto, id: string) {
+    async updateService(dto: UpdateServiceDto, id: string) {
         try {
             if (!id) throw new Error('Service ID is required for update');
-            return this.prisma.service.update({
+            return await this.prisma.service.update({
                 where: { id },
                 data: dto
             });
@@ -48,14 +48,14 @@ export class ServicesRepository {
         }
     }
 
-    getServiceById(id: string) {
-        return this.prisma.service.findUnique({
+    async getServiceById(id: string) {
+        return await this.prisma.service.findUnique({
             where: { id }
         });
     }
 
-    getChecksById(id: string) {
-        return this.prisma.check.findMany({
+    async getChecksById(id: string) {
+        return await this.prisma.check.findMany({
             where: { serviceId: id }
         });
     }
@@ -66,34 +66,35 @@ export class ServicesRepository {
         });
     }
 
-    getCount() {
+    async getCount() {
         try {
-            return this.prisma.service.count();
+            return await this.prisma.service.count();
         } catch (error) {
             console.log('Erreur lors de la récupération du nombre de services:', error);
-            return null; // ou une valeur par défaut appropriée
+            return null;
         }
     }
 
-    getUpServices() {
-        return this.prisma.serviceState.count({
+    async getUpServices() {
+        return await this.prisma.serviceState.count({
             where: { status: 'UP' },
         });
     }
 
-    getDownServices() {
-        return this.prisma.serviceState.count({
+    async getDownServices() {
+        return await this.prisma.serviceState.count({
             where: { status: 'DOWN' },
         });
     }
 
-    getServiceCardsInfo() {
-        return this.prisma.serviceState.findMany({
+    async getServiceCardsInfo() {
+        return await this.prisma.serviceState.findMany({
             select: {
                 status: true,
                 latencyMs: true,
                 service: {
                     select: {
+                        id: true,
                         name: true,
                         type: true,
                         intervalSeconds: true,

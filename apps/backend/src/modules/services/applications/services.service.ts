@@ -11,8 +11,8 @@ export class ServicesService {
         private readonly checkScheduler: CheckScheduler,
     ) { }
 
-    findAll() {
-        return this.servicesRepository.findAll();
+    async findAll() {
+        return await this.servicesRepository.findAll();
     }
 
     async insertNewService(dto: CreateServiceDto) {
@@ -25,41 +25,41 @@ export class ServicesService {
     }
 
 
-    deleteService(id: string) {
-        return this.servicesRepository.deleteService(id);
+    async deleteService(id: string) {
+        return await this.servicesRepository.deleteService(id);
     }
 
-    updateService(dto: UpdateServiceDto, id: string) {
-        return this.servicesRepository.updateService(dto, id);
+    async updateService(dto: UpdateServiceDto, id: string) {
+        return await this.servicesRepository.updateService(dto, id);
     }
 
-    getServiceById(id: string) {
-        return this.servicesRepository.getServiceById(id);
+    async getServiceById(id: string) {
+        return await this.servicesRepository.getServiceById(id);
     }
 
-    getCount() {
-        return this.servicesRepository.getCount();
+    async getCount() {
+        return await this.servicesRepository.getCount();
     }
 
-    getUpServices() {
-        return this.servicesRepository.getUpServices();
-    }
-    getDownServices() {
-        return this.servicesRepository.getDownServices();
+    async getUpServices() {
+        return await this.servicesRepository.getUpServices();
     }
 
-    getServiceCardsInfo() {
-        return this.servicesRepository.getServiceCardsInfo();
+    async getDownServices() {
+        return await this.servicesRepository.getDownServices();
+    }
+
+    async getServiceCardsInfo() {
+        return await this.servicesRepository.getServiceCardsInfo();
     }
 
     // checks
-    getChecksById(id: string) {
-        return this.servicesRepository.getChecksById(id);
+    async getChecksById(id: string) {
+        return await this.servicesRepository.getChecksById(id);
     }
-
 
     // incidents
     async getIncidentsById(id: string) {
-        return this.servicesRepository.getIncidentsById(id);
+        return await this.servicesRepository.getIncidentsById(id);
     }
 }
