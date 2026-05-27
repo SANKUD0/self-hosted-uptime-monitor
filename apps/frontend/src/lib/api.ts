@@ -50,6 +50,16 @@ export type ServicesCardInfo = {
     }
 }
 
+export type MonotoringChecksResponse = {
+    id: string;
+    serviceId: string;
+    status: string;
+    latencyMs: number | null;
+    statusCode: number | null;
+    error: string | null;
+    timestamp: string;
+}
+
 
 
 export const api = {
@@ -117,11 +127,17 @@ export const api = {
             if (!res.ok) throw new Error(`HTTP ${res.status} `);
             return res.json() as Promise<CountIncidentsResponse>
         }),
+
+
     },
     monitoring: {
         getAll: () => fetch(`${BASE_URL}/monitoring`).then(res => {
             if (!res.ok) throw new Error(`HTTP ${res.status} `);
             return res.json() as Promise<servicesMonitoringResponse[]>
+        }),
+        get5FirstRecentChecksForService: ({ id }: { id: string }) => fetch(`${BASE_URL}/monitoring/${id}/checks`).then(res => {
+            if (!res.ok) throw new Error(`HTTP ${res.status} `);
+            return res.json() as Promise<MonotoringChecksResponse[]>
         }),
     }
 }
