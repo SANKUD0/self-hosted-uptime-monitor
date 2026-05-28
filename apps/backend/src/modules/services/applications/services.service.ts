@@ -53,13 +53,20 @@ export class ServicesService {
         return await this.servicesRepository.getServiceCardsInfo();
     }
 
+    /**
+     * Enables or disables a service and schedules/unschedules checks accordingly.
+     * To be called when a service's enabled status is toggled.
+     */
     async patchServiceStatus(id: string, enabled: boolean) {
         const service = await this.servicesRepository.patchServiceEnabled(id, enabled);
+        // If the service was successfully updated and has an ID, schedule or unschedule checks based on the new status
         if (service && 'id' in service) {
             if (enabled) {
+                // If the service is now enabled, schedule checks
                 await this.checkScheduler.scheduleService(service.id, service.intervalSeconds);
                 await this.checkScheduler.runImmediateCheck(service.id);
             } else {
+                // If the service is now disabled, unschedule checks
                 await this.checkScheduler.unscheduleService(service.id, service.intervalSeconds);
             }
         }
