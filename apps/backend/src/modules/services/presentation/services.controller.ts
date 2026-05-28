@@ -65,7 +65,7 @@ export class ServicesController {
         }
     }
 
-    @Patch(':id/enabled-disabled')
+    @Patch(':id/enable-disable')
     async patchServiceStatus(@Param('id') id: string, @Body('enabled') enabled: boolean) {
         try {
             if (enabled === undefined) throw new HttpException('Invalid request body', HttpStatus.BAD_REQUEST);
