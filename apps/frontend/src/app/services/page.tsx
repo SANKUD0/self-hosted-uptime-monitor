@@ -206,6 +206,33 @@ export default function ServicesPage() {
                         service={selected}
                         onClose={() => setSelected(null)}
                         onRefresh={fetchServices}
+                        onServiceUpdated={(serviceId, patch) => {
+                            setServices((current) =>
+                                current.map((item) =>
+                                    item.service.id === serviceId
+                                        ? {
+                                            ...item,
+                                            service: {
+                                                ...item.service,
+                                                ...patch,
+                                            },
+                                        }
+                                        : item
+                                )
+                            );
+
+                            setSelected((current) =>
+                                current && current.service.id === serviceId
+                                    ? {
+                                        ...current,
+                                        service: {
+                                            ...current.service,
+                                            ...patch,
+                                        },
+                                    }
+                                    : current
+                            );
+                        }}
                         onEnabledChange={(serviceId, nextEnabled) => {
                             setServices((current) =>
                                 current.map((item) =>
@@ -241,7 +268,7 @@ export default function ServicesPage() {
 }
 
 // ── Panneau de détail (dans le même fichier pour commencer) ──
-function ServiceDetailPanel({ service, onClose, onRefresh, onEnabledChange, }: { service: ServicesCardInfo; onClose: () => void; onRefresh: () => void; onEnabledChange: (serviceId: string, nextEnabled: boolean) => void; }) {
+function ServiceDetailPanel({ service, onClose, onRefresh, onEnabledChange, onServiceUpdated, }: { service: ServicesCardInfo; onClose: () => void; onRefresh: () => void; onEnabledChange: (serviceId: string, nextEnabled: boolean) => void; onServiceUpdated: (serviceId: string, patch: { name?: string; type?: string; intervalSeconds?: number; timeoutMs?: number; failureThreshold?: number }) => void; }) {
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [details, setDetails] = useState<any>(null);
@@ -290,10 +317,53 @@ function ServiceDetailPanel({ service, onClose, onRefresh, onEnabledChange, }: {
         }
     };
 
+    /**
+     * Save edited service details. 
+     */
+    const handleSave = async () => {
+        await api.services.patch(editedService.id, {
+            name: editedService.name,
+            type: editedService.type,
+            target: editedService.target,
+            intervalSeconds: editedService.intervalSeconds,
+            timeoutMs: editedService.timeoutMs,
+            failureThreshold: editedService.failureThreshold,
+        });
+
+        onServiceUpdated(editedService.id, {
+            name: editedService.name,
+            type: editedService.type,
+            intervalSeconds: editedService.intervalSeconds,
+            timeoutMs: editedService.timeoutMs,
+            failureThreshold: editedService.failureThreshold,
+        });
+        setDetails((current: any) => ({
+            ...current,
+            target: editedService.target,
+        }));
+        setEditOpen(false);
+        onRefresh();
+    }
+
     useEffect(() => {
+        setEditOpen(false);
+        setEditedService({
+            id: service.service.id,
+            name: service.service.name,
+            type: service.service.type,
+            target: "",
+            intervalSeconds: service.service.intervalSeconds,
+            timeoutMs: service.service.timeoutMs ?? 5000,
+            failureThreshold: service.service.failureThreshold ?? 3,
+        });
+
         api.services.getService(service.service.id)
             .then((data) => {
                 setDetails(data);
+                setEditedService((current) => ({
+                    ...current,
+                    target: data?.target ?? "",
+                }));
             })
             .catch((err) => {
                 setError(err.message);
@@ -311,6 +381,7 @@ function ServiceDetailPanel({ service, onClose, onRefresh, onEnabledChange, }: {
                         {editOpen ? (
                             <>
                                 <Input value={editedService.name} onChange={(e) => setEditedService({ ...editedService, name: e.target.value })} className="text-xl font-bold" />
+
                             </>
                         ) : (<h2 className="text-xl font-bold">{service.service.name}</h2>)
 
@@ -331,12 +402,75 @@ function ServiceDetailPanel({ service, onClose, onRefresh, onEnabledChange, }: {
 
             {/* Infos */}
             <div className="grid grid-cols-2 gap-4 mb-6">
-                <InfoItem label="Type" value={service.service.type} mono />
-                <InfoItem label="Target" value={details?.target ?? '—'} />
-                <InfoItem label="Intervalle" value={`${service.service.intervalSeconds}s`} />
+                {editOpen ? (
+                    <>
+                        <Field>
+                            <FieldLabel htmlFor="type">Type</FieldLabel>
+                            <select value={editedService.type} onChange={(e) => setEditedService({ ...editedService, type: e.target.value })} className="border bg-transparent px-2 py-1 rounded">
+                                <option value="HTTP">HTTP</option>
+                                <option value="PING">PING</option>
+                                <option value="TCP">TCP</option>
+                                <option value="DOCKER">DOCKER</option>
+                            </select>
+                        </Field>
+                        <Field>
+                            <FieldLabel htmlFor="target">Target</FieldLabel>
+                            <Input id="target" required value={editedService.target} onChange={(e) => setEditedService({ ...editedService, target: e.target.value })} />
+                        </Field>
+                        <Field>
+                            <FieldLabel htmlFor="intervalSeconds">Interval (s)</FieldLabel>
+                            <Input
+                                id="intervalSeconds"
+                                type="number"
+                                required
+                                value={editedService.intervalSeconds}
+                                onChange={(e) => {
+                                    const parsed = Number.parseInt(e.target.value, 10);
+                                    if (Number.isNaN(parsed)) return;
+                                    setEditedService((current) => ({ ...current, intervalSeconds: parsed }));
+                                }}
+                            />
+                        </Field>
+                        <Field>
+                            <FieldLabel htmlFor="timeoutMs">Timeout (ms)</FieldLabel>
+                            <Input
+                                id="timeoutMs"
+                                type="number"
+                                required
+                                value={editedService.timeoutMs ?? 5000}
+                                onChange={(e) => {
+                                    const parsed = Number.parseInt(e.target.value, 10);
+                                    if (Number.isNaN(parsed)) return;
+                                    setEditedService((current) => ({ ...current, timeoutMs: parsed }));
+                                }}
+                            />
+                        </Field>
+                        <Field>
+                            <FieldLabel htmlFor="failureThreshold">Failure Threshold</FieldLabel>
+                            <Input
+                                id="failureThreshold"
+                                type="number"
+                                min="0"
+                                max="10"
+                                required
+                                value={editedService.failureThreshold ?? 3}
+                                onChange={(e) => {
+                                    const parsed = Number.parseInt(e.target.value, 10);
+                                    if (Number.isNaN(parsed)) return;
+                                    setEditedService((current) => ({ ...current, failureThreshold: parsed }));
+                                }}
+                            />
+                        </Field>
+                    </>
+                ) : (
+                    <>
+                        <InfoItem label="Type" value={service.service.type} mono />
+                        <InfoItem label="Target" value={details?.target ?? '—'} />
+                        <InfoItem label="Intervalle" value={`${service.service.intervalSeconds}s`} />
+                        <InfoItem label="Timeout" value={service.service.timeoutMs != null ? `${service.service.timeoutMs}ms` : '—'} />
+                        <InfoItem label="Failure Threshold" value={service.service.failureThreshold != null ? `${service.service.failureThreshold}` : '—'} />
+                    </>)}
                 <InfoItem label="Latence" value={service.latencyMs != null ? service.latencyMs >= 1000 ? `${msToSeconds(service.latencyMs).toFixed(2)}s` : `${service.latencyMs}ms` : '—'} />
-                <InfoItem label="Timeout" value={service.service.timeoutMs != null ? `${service.service.timeoutMs}ms` : '—'} />
-                <InfoItem label="Failure Threshold" value={service.service.failureThreshold != null ? `${service.service.failureThreshold}` : '—'} />
             </div>
 
             {/* Derniers checks */}
@@ -349,7 +483,7 @@ function ServiceDetailPanel({ service, onClose, onRefresh, onEnabledChange, }: {
                         <thead>
                             <tr>
                                 <th className="pr-4 text-left">Timestamp</th>
-                                <th className="pr-4 text-left">Status Code</th>
+                                <th className="pr-4 text-left">Code</th>
                                 <th className="pr-4 text-left">Status</th>
                                 <th className="text-left">Latency</th>
                             </tr>
@@ -385,7 +519,7 @@ function ServiceDetailPanel({ service, onClose, onRefresh, onEnabledChange, }: {
                         <Button variant="outline" size="sm" className="cursor-pointer" onClick={() => setEditOpen(false)}>
                             Annuler
                         </Button>
-                        <Button variant="default" size="sm" className="cursor-pointer" onClick={() => { }}>
+                        <Button variant="default" size="sm" className="cursor-pointer" onClick={handleSave}>
                             Enregistrer
                         </Button>
                     </>
