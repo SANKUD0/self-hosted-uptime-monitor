@@ -53,6 +53,19 @@ export class ServicesService {
         return await this.servicesRepository.getServiceCardsInfo();
     }
 
+    async patchServiceStatus(id: string, enabled: boolean) {
+        const service = await this.servicesRepository.patchServiceEnabled(id, enabled);
+        if (service && 'id' in service) {
+            if (enabled) {
+                await this.checkScheduler.scheduleService(service.id, service.intervalSeconds);
+                await this.checkScheduler.runImmediateCheck(service.id);
+            } else {
+                await this.checkScheduler.unscheduleService(service.id, service.intervalSeconds);
+            }
+        }
+        return service;
+    }
+
     // checks
     async getChecksById(id: string) {
         return await this.servicesRepository.getChecksById(id);
