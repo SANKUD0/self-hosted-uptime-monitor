@@ -47,6 +47,9 @@ export type ServicesCardInfo = {
         name: string;
         type: string;
         intervalSeconds: number;
+        timeoutMs: number;
+        failureThreshold: number;
+        enabled: boolean;
     }
 }
 
@@ -113,6 +116,16 @@ export const api = {
                 "Content-Type": "application/json",
             },
             body: JSON.stringify(service),
+        }).then(res => {
+            if (!res.ok) throw new Error(`HTTP ${res.status} `);
+            return res.json();
+        }),
+        enableDisableService: (id: string, isActive: boolean) => fetch(`${BASE_URL}/services/${id}/enable-disable`, {
+            method: "PATCH",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ enabled: isActive }),
         }).then(res => {
             if (!res.ok) throw new Error(`HTTP ${res.status} `);
             return res.json();

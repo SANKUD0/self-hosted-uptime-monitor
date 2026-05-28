@@ -9,7 +9,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import StatusBadge from "@/components/status";
+import StatusBadge, { StatusBadgeEnabled } from "@/components/status";
 import { api, MonotoringChecksResponse, ServicesCardInfo } from "@/lib/api";
 import { msToSeconds } from "@/lib/duration";
 import { X, Zap, Timer } from "lucide-react";
@@ -159,6 +159,7 @@ export default function ServicesPage() {
                                 <tr>
                                     <th className="text-left p-3 font-medium">Nom</th>
                                     <th className="text-left p-3 font-medium">Statut</th>
+                                    <th className="text-left p-3 font-medium">Enabled</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -186,6 +187,9 @@ export default function ServicesPage() {
                                             <td className="p-3">
                                                 <StatusBadge status={s.status} />
                                             </td>
+                                            <td className="p-3">
+                                                <StatusBadgeEnabled enabled={s.service.enabled} />
+                                            </td>
                                         </tr>
                                     ))
                                 )}
@@ -202,6 +206,33 @@ export default function ServicesPage() {
                         service={selected}
                         onClose={() => setSelected(null)}
                         onRefresh={fetchServices}
+                        onEnabledChange={(serviceId, nextEnabled) => {
+                            setServices((current) =>
+                                current.map((item) =>
+                                    item.service.id === serviceId
+                                        ? {
+                                            ...item,
+                                            service: {
+                                                ...item.service,
+                                                enabled: nextEnabled,
+                                            },
+                                        }
+                                        : item
+                                )
+                            );
+
+                            setSelected((current) =>
+                                current && current.service.id === serviceId
+                                    ? {
+                                        ...current,
+                                        service: {
+                                            ...current.service,
+                                            enabled: nextEnabled,
+                                        },
+                                    }
+                                    : current
+                            );
+                        }}
                     />
                 </div>
             )}
@@ -210,12 +241,23 @@ export default function ServicesPage() {
 }
 
 // ── Panneau de détail (dans le même fichier pour commencer) ──
-function ServiceDetailPanel({ service, onClose, onRefresh, }: { service: ServicesCardInfo; onClose: () => void; onRefresh: () => void; }) {
+function ServiceDetailPanel({ service, onClose, onRefresh, onEnabledChange, }: { service: ServicesCardInfo; onClose: () => void; onRefresh: () => void; onEnabledChange: (serviceId: string, nextEnabled: boolean) => void; }) {
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [details, setDetails] = useState<any>(null);
     const [monitoringChecks, setMonitoringChecks] = useState<MonotoringChecksResponse[]>([]);
     const [monitoringError, setMonitoringError] = useState<string | null>(null);
+    const [editOpen, setEditOpen] = useState(false);
+    const [editedService, setEditedService] = useState({
+        id: service.service.id,
+        name: service.service.name,
+        type: service.service.type,
+        target: details?.target ?? '',
+        intervalSeconds: service.service.intervalSeconds,
+        timeoutMs: service.service.timeoutMs ?? 5000,
+        failureThreshold: service.service.failureThreshold ?? 3,
+    });
+    const [enabled, setEnabled] = useState(service.service.enabled);
 
     const handleDelete = async (id: string) => {
         await api.services.delete(id);
@@ -229,6 +271,25 @@ function ServiceDetailPanel({ service, onClose, onRefresh, }: { service: Service
             .catch((err) => setMonitoringError(err.message));
     }
 
+    /**
+     * Enabling/disabling a service is a very common action that we want to be as snappy as possible in the UI, so we optimistically update the UI before the API call, and roll back if it fails. We also have a dedicated API route for this action to make it more efficient and explicit (see api.services.enableDisableService).
+    */
+    const handleToggle = async (nextEnabled: boolean) => {
+        const previousEnabled = enabled;
+
+        setEnabled(nextEnabled);
+        onEnabledChange(service.service.id, nextEnabled);
+
+        try {
+            await api.services.enableDisableService(service.service.id, nextEnabled);
+            onRefresh();
+        } catch (err: any) {
+            setEnabled(previousEnabled);
+            onEnabledChange(service.service.id, previousEnabled);
+            setError(err.message);
+        }
+    };
+
     useEffect(() => {
         api.services.getService(service.service.id)
             .then((data) => {
@@ -237,23 +298,25 @@ function ServiceDetailPanel({ service, onClose, onRefresh, }: { service: Service
             .catch((err) => {
                 setError(err.message);
             });
+        setEnabled(service.service.enabled);
         if (service) fetchMonitoring(service.service.id);
-    }, [service.service.id]);
+    }, [service.service.id, service.service.enabled]);
 
-    // const handleToggle = async () => {
-    //     await api.services.patch(service.service.id, {
-    //     });
-    //     onRefresh();
-    // };
     return (
         <div className="h-full flex flex-col">
             {/* Header */}
             <div className="flex items-start justify-between mb-6">
                 <div>
                     <div className="flex items-center gap-3">
-                        <h2 className="text-xl font-bold">{service.service.name}</h2>
+                        {editOpen ? (
+                            <>
+                                <Input value={editedService.name} onChange={(e) => setEditedService({ ...editedService, name: e.target.value })} className="text-xl font-bold" />
+                            </>
+                        ) : (<h2 className="text-xl font-bold">{service.service.name}</h2>)
+
+                        }
                         <div className={`${styles.toggle}`}>
-                            <input type="checkbox" id="toggle-service" />
+                            <input checked={enabled} onChange={(e) => void handleToggle(e.target.checked)} type="checkbox" id="toggle-service" />
                             <label htmlFor="toggle-service"></label>
                         </div>
                     </div>
@@ -272,6 +335,8 @@ function ServiceDetailPanel({ service, onClose, onRefresh, }: { service: Service
                 <InfoItem label="Target" value={details?.target ?? '—'} />
                 <InfoItem label="Intervalle" value={`${service.service.intervalSeconds}s`} />
                 <InfoItem label="Latence" value={service.latencyMs != null ? service.latencyMs >= 1000 ? `${msToSeconds(service.latencyMs).toFixed(2)}s` : `${service.latencyMs}ms` : '—'} />
+                <InfoItem label="Timeout" value={service.service.timeoutMs != null ? `${service.service.timeoutMs}ms` : '—'} />
+                <InfoItem label="Failure Threshold" value={service.service.failureThreshold != null ? `${service.service.failureThreshold}` : '—'} />
             </div>
 
             {/* Derniers checks */}
@@ -315,30 +380,47 @@ function ServiceDetailPanel({ service, onClose, onRefresh, }: { service: Service
 
             {/* Actions */}
             <div className="mt-auto flex gap-2 pt-4 border-t">
-                {/* Boutton supprimer */}
-                <Button variant="destructive" size="sm" className="cursor-pointer" onClick={() => setConfirmOpen(true)}>
-                    Supprimer
-                </Button>
-                <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-                    <DialogContent>
-                        <DialogHeader>
-                            <DialogTitle>Supprimer ce service ?</DialogTitle>
-                            <DialogDescription>
-                                Vous êtes sur le point de supprimer <strong>{service.service.name}</strong>. Cette action est irréversible.
-                            </DialogDescription>
-                        </DialogHeader>
-                        <DialogFooter className="mt-2">
-                            <Button variant="outline" className="cursor-pointer" onClick={() => setConfirmOpen(false)}>
-                                Annuler
-                            </Button>
-                            <Button variant="destructive" className="cursor-pointer" onClick={() => handleDelete(service.service.id)}>
-                                Supprimer
-                            </Button>
-                        </DialogFooter>
-                    </DialogContent>
-                </Dialog>
-                {/*TODO Désactiver / Réactiver service */}
-                {/* TODO Modifier le service */}
+                {editOpen ? (
+                    <>
+                        <Button variant="outline" size="sm" className="cursor-pointer" onClick={() => setEditOpen(false)}>
+                            Annuler
+                        </Button>
+                        <Button variant="default" size="sm" className="cursor-pointer" onClick={() => { }}>
+                            Enregistrer
+                        </Button>
+                    </>
+                ) : (
+                    <>
+                        {/* Boutton supprimer */}
+                        <Button variant="destructive" size="sm" className="cursor-pointer" onClick={() => setConfirmOpen(true)}>
+                            Supprimer
+                        </Button>
+                        <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+                            <DialogContent>
+                                <DialogHeader>
+                                    <DialogTitle>Supprimer ce service ?</DialogTitle>
+                                    <DialogDescription>
+                                        Vous êtes sur le point de supprimer <strong>{service.service.name}</strong>. Cette action est irréversible.
+                                    </DialogDescription>
+                                </DialogHeader>
+                                <DialogFooter className="mt-2">
+                                    <Button variant="outline" className="cursor-pointer" onClick={() => setConfirmOpen(false)}>
+                                        Annuler
+                                    </Button>
+                                    <Button variant="destructive" className="cursor-pointer" onClick={() => handleDelete(service.service.id)}>
+                                        Supprimer
+                                    </Button>
+                                </DialogFooter>
+                            </DialogContent>
+                        </Dialog>
+                        <Button variant="outline" size="sm" className="cursor-pointer" onClick={() => setEditOpen(true)}>
+                            Modiffier
+                        </Button>
+                    </>
+                )
+
+                }
+
 
             </div>
         </div>
