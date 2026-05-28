@@ -16,3 +16,15 @@ export default function StatusBadge({ status }: { status?: string }) {
         </span>
     );
 }
+
+export const StatusBadgeEnabled = ({ enabled }: { enabled: boolean }) => (
+ <span
+    className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium
+      ${enabled
+        ? "bg-green-50 text-green-700 ring-1 ring-green-600/20"
+        : "bg-red-50 text-red-700 ring-1 ring-red-600/20"
+      }`}
+  >
+    {enabled ? "Enabled" : "Disabled"}
+  </span>
+);
