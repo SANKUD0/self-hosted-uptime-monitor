@@ -96,6 +96,7 @@ export class MonitoringServiceStateRepository {
                         name: true,
                         type: true,
                         target: true,
+                        enabled: true,
                     }
                 }
             }
