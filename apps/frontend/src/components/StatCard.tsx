@@ -20,7 +20,13 @@ export function StatCard({ title, value, description, error  }: StatCardProps) {
             </CardHeader>
             <CardContent className="flex flex-col items-center">
                 <div className="text-3xl font-bold">
-                    <CardFetchError message={error} />
+                    {error ? (
+                        <CardFetchError message={error} />
+                    ) : value === null || value === undefined ? (
+                        <Spinner className="size-6" />
+                    ) : (
+                        value
+                    )}
                 </div>
                 {description && (
                     <p className="text-xs text-muted-foreground mt-1 text-center">{description}</p>
