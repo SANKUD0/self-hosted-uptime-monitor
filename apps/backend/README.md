@@ -1,98 +1,164 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# OpenNotify Backend
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+OpenNotify is a monitoring backend built with NestJS, Prisma, PostgreSQL, and BullMQ.
+It continuously checks service health (HTTP, TCP, Ping, Docker), stores historical checks,
+tracks incidents, and sends notifications to configured user contacts.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Core Capabilities
 
-## Description
+- Service management (create, update, enable/disable, delete)
+- Scheduled and immediate health checks via Redis-backed queue
+- Multi-protocol health checks: HTTP, TCP, Ping, Docker
+- Incident lifecycle management (open and resolve)
+- Notifications on incident open/resolve (Email and Discord)
+- Read models for dashboards (service state and aggregated counters)
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Architecture Overview
 
-## Project setup
+The project follows a modular structure with clear layer boundaries:
+
+- Presentation: HTTP controllers
+- Application: orchestration/business use cases
+- Infrastructure: Prisma repositories, queue workers, protocol adapters
+- Domain: interfaces and entities for core concepts
+
+Main modules:
+
+- `services`: service CRUD and monitoring lifecycle trigger points
+- `monitoring`: check scheduling, check execution, and service state projections
+- `incidents`: incident creation/resolution logic based on failure thresholds
+- `notifications`: contact management and notification dispatch
+
+Shared:
+
+- `shared/database`: Prisma integration and lifecycle management
+
+## Runtime Flow
+
+1. `CheckScheduler` registers repeatable jobs for enabled services at startup.
+2. `CheckProcessor` consumes `checks` jobs from BullMQ.
+3. The processor selects the checker strategy based on service type.
+4. Check results are persisted in `Check` and projected to `ServiceState`.
+5. `IncidentsService` evaluates failures against `failureThreshold`.
+6. Incidents are opened/resolved and `NotificationsService` notifies enabled contacts.
+
+## Prerequisites
+
+- Node.js 20+
+- pnpm 8+
+- PostgreSQL
+- Redis (for BullMQ)
+
+## Environment Variables
+
+Create a `.env` file in the backend root.
+
+| Variable | Required | Description |
+| --- | --- | --- |
+| `PORT` | No | API port (default: `3001`) |
+| `DATABASE_URL` | Yes | PostgreSQL connection string for Prisma |
+| `REDIS_HOST` | No | Redis host (default: `localhost`) |
+| `REDIS_PORT` | No | Redis port (default: `6379`) |
+| `SMTP_HOST` | For email | SMTP server host |
+| `SMTP_PORT` | For email | SMTP server port |
+| `SMTP_USER` | For email | SMTP username |
+| `SMTP_PASSWORD` | For email | SMTP password |
+| `SMTP_FROM` | For email | Sender email address |
+
+## Setup
 
 ```bash
-$ pnpm install
+pnpm install
 ```
 
-## Compile and run the project
+Generate Prisma client and run migrations:
+
+```bash
+pnpm prisma generate
+pnpm prisma migrate deploy
+```
+
+For local development with new migrations:
+
+```bash
+pnpm prisma migrate dev
+```
+
+## Run
 
 ```bash
 # development
-$ pnpm run start
+pnpm run start
 
 # watch mode
-$ pnpm run start:dev
+pnpm run start:dev
 
-# production mode
-$ pnpm run start:prod
+# debug mode
+pnpm run start:debug
+
+# production
+pnpm run build
+pnpm run start:prod
 ```
 
-## Run tests
+## Test and Lint
 
 ```bash
-# unit tests
-$ pnpm run test
-
-# e2e tests
-$ pnpm run test:e2e
-
-# test coverage
-$ pnpm run test:cov
+pnpm run lint
+pnpm run test
+pnpm run test:e2e
+pnpm run test:cov
 ```
 
-## Deployment
+## API Overview
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+### Services
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+- `GET /services`
+- `GET /services/count`
+- `GET /services/count/up`
+- `GET /services/count/down`
+- `GET /services/:id`
+- `GET /services/:id/checks`
+- `GET /services/:id/incidents`
+- `GET /services/cards/info`
+- `POST /services`
+- `PATCH /services/:id`
+- `PATCH /services/:id/enable-disable`
+- `DELETE /services/:id`
 
-```bash
-$ pnpm install -g @nestjs/mau
-$ mau deploy
-```
+### Monitoring
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+- `GET /monitoring`
+- `GET /monitoring/:id`
+- `GET /monitoring/:id/checks`
 
-## Resources
+### Incidents
 
-Check out a few resources that may come in handy when working with NestJS:
+- `GET /incidents`
+- `GET /incidents/count/open`
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+### User Contacts
 
-## Support
+- `GET /user-contacts`
+- `GET /user-contacts/:id`
+- `POST /user-contacts`
+- `PATCH /user-contacts/:id`
+- `DELETE /user-contacts/:id`
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+## Data Model (Prisma)
 
-## Stay in touch
+Main entities:
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+- `Service`: monitored target configuration
+- `Check`: immutable check history
+- `ServiceState`: current/latest service status projection
+- `Incident`: downtime periods with resolution tracking
+- `UserContact`: alert destinations (EMAIL, DISCORD)
 
-## License
+## Notes for Contributors
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+- Keep module boundaries explicit (avoid cross-module infrastructure coupling).
+- Keep domain and use-case semantics in English for consistency.
+- Prefer adding comments only where intent is non-obvious.
+- Preserve backward compatibility for public API routes.

@@ -1,8 +1,8 @@
 import { CheckStatus } from '@prisma/client';
 
 /**
- * Résultat d'un check effectué sur un service.
- * C'est un Value Object : immuable, pas d'identité, juste des données.
+ * Result of a health check performed on a service.
+ * Value Object semantics: immutable, identity-less, data-only.
  */
 export interface CheckResult {
   status: CheckStatus;
@@ -12,17 +12,17 @@ export interface CheckResult {
 }
 
 /**
- * Interface que TOUS les checkers doivent implémenter.
- * Permet le pattern Strategy : on peut substituer un checker par un autre
- * sans changer le code qui les utilise.
+ * Contract implemented by all checkers.
+ * Enables the Strategy pattern so checker implementations can be swapped
+ * without changing the caller logic.
  */
 export interface Checker {
   /**
-   * Effectue un check sur une cible et retourne le résultat.
-   * 
-   * @param target - URL pour HTTP, host:port pour TCP, etc. selon l'implémentation
-   * @param timeoutMs - temps max avant de considérer un timeout
-   * @returns Le résultat du check (jamais throw, toujours un CheckResult)
+   * Runs a check against a target and returns the result.
+   *
+   * @param target - HTTP URL, TCP host:port, etc., depending on implementation
+   * @param timeoutMs - maximum duration before considering the check timed out
+   * @returns Check result (never throws; always returns a CheckResult)
    */
   check(target: string, timeoutMs: number): Promise<CheckResult>;
 }

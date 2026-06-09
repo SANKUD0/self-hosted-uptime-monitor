@@ -17,7 +17,7 @@ export class NotificationsService {
   ) { }
 
   // ============================================
-  // CRUD pour les UserContact
+  // UserContact CRUD
   // ============================================
 
   async findAll() {
@@ -27,7 +27,7 @@ export class NotificationsService {
   async findOne(id: string) {
     const contact = await this.repository.findById(id);
     if (!contact) {
-      throw new NotFoundException(`Contact ${id} introuvable`);
+      throw new NotFoundException(`Contact ${id} not found`);
     }
     return contact;
   }
@@ -41,7 +41,7 @@ export class NotificationsService {
   }
 
   async update(id: string, dto: UpdateUserContactDto) {
-    await this.findOne(id); // throw 404 si introuvable
+    await this.findOne(id); // throws 404 if not found
     return this.repository.update(id, dto);
   }
 
@@ -51,17 +51,17 @@ export class NotificationsService {
   }
 
   // ============================================
-  // Envoi de notifications
+  // Notification dispatch
   // ============================================
 
   /**
-   * Envoie une notification à tous les contacts activés.
-   * Appelé depuis IncidentsService quand un incident est ouvert/résolu.
+   * Sends a notification to all enabled contacts.
+   * Called by IncidentsService on incident open/resolve transitions.
    */
   async notifyAll(payload: NotificationPayload): Promise<void> {
     const contacts = await this.repository.findAllEnabled();
 
-    this.logger.log(`Envoi de notif à ${contacts.length} contact(s)`);
+    this.logger.log(`Sending notifications to ${contacts.length} contact(s)`);
 
     await Promise.allSettled(
       contacts.map((contact) => this.sendToContact(contact, payload)),
@@ -80,11 +80,11 @@ export class NotificationsService {
       if (contact.type === 'EMAIL') {
         await this.emailNotifier.send(contact.value, payload);
       } else if (contact.type === 'DISCORD') {
-        // contact.value = URL du webhook Discord
+        // contact.value contains Discord webhook URL.
         await this.discordNotifier.send(contact.value, payload);
       }
     } catch (err) {
-      this.logger.error(`Erreur d'envoi pour contact ${contact.id}`, err);
+      this.logger.error(`Notification send failed for contact ${contact.id}`, err);
     }
   }
 }

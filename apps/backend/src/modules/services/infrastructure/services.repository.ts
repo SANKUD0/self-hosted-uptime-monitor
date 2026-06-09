@@ -19,8 +19,8 @@ export class ServicesRepository {
                 data: dto
             });
         } catch (error) {
-            console.log('Erreur lors de la création du service ', error);
-            return { message: 'Erreur lors de la création du service' };
+            console.log('Error while creating service', error);
+            return { message: 'Error while creating service' };
         }
     }
 
@@ -30,8 +30,8 @@ export class ServicesRepository {
                 where: { id: id }
             });
         } catch (error) {
-            console.log('Erreur lors de la suppression du service:', error);
-            return { message: 'Erreur lors de la suppression du service' };
+            console.log('Error while deleting service:', error);
+            return { message: 'Error while deleting service' };
         }
     }
 
@@ -43,8 +43,8 @@ export class ServicesRepository {
                 data: dto
             });
         } catch (error) {
-            console.log('Erreur lors de la mise à jour du service:', error);
-            return { message: 'Erreur lors de la mise à jour du service' };
+            console.log('Error while updating service:', error);
+            return { message: 'Error while updating service' };
         }
     }
 
@@ -70,7 +70,7 @@ export class ServicesRepository {
         try {
             return await this.prisma.service.count();
         } catch (error) {
-            console.log('Erreur lors de la récupération du nombre de services:', error);
+            console.log('Error while fetching services count:', error);
             return null;
         }
     }
@@ -119,8 +119,8 @@ export class ServicesRepository {
                 data: { enabled }
             });
         } catch (error) {
-            console.log('Erreur lors de la mise à jour du statut du service:', error);
-            return { message: 'Erreur lors de la mise à jour du statut du service' };
+            console.log('Error while updating service status:', error);
+            return { message: 'Error while updating service status' };
         }
     }
 }

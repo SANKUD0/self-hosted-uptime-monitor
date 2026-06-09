@@ -11,16 +11,14 @@ export class HttpChecker implements Checker {
                 method: 'GET',
                 headersTimeout: timeoutMs,
                 bodyTimeout: timeoutMs,
-                // On ne suit pas les redirects pour mesurer vraiment ce qui répond
+                // Keep disabled to measure direct target response only.
                 //maxRedirections: 0 
             });
             const latencyMs = Math.round(performance.now() - startTime);
             const statusCode = response.statusCode;
-            // Important : consommer le body pour libérer la connexion
-            // (sinon undici garde la connexion ouverte)
+            // Consume response body to release the underlying connection.
             await response.body.dump();
-            // 2xx et 3xx = service up
-            // 4xx et 5xx = service répond mais erreur
+            // 2xx/3xx are considered healthy. 4xx/5xx are considered DOWN.
             const isHealthy = statusCode >= 200 && statusCode < 400;
 
             return {
@@ -32,7 +30,7 @@ export class HttpChecker implements Checker {
 
         } catch (error) {
             const latencyMs = Math.round(performance.now() - startTime);
-            // Détection des timeouts (undici code)
+            // Timeout detection based on undici error signatures.
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             const isTimeOut = errorMessage.includes('timeout') ||
                 errorMessage.includes('UND_ERR_HEADERS_TIMEOUT') ||

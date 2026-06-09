@@ -4,10 +4,9 @@ import { IncidentsRepository } from '../infrastructure/incidents.repository';
 import { NotificationsService } from '../../notifications/application/notifications.service';
 
 /**
- * Service applicatif : orchestre la logique d'incidents.
- * 
- * Exposé via une méthode unique handleCheckResult() qui sera appelée
- * par le CheckProcessor après chaque check.
+ * Application service orchestrating incident lifecycle logic.
+ *
+ * Exposes handleCheckResult(), called by CheckProcessor after each check.
  */
 @Injectable()
 export class IncidentsService {
@@ -19,81 +18,79 @@ export class IncidentsService {
   ) { }
 
   /**
-   * Logique métier déclenchée après un check.
-   * 
-   * @param serviceId - ID du service checké
-   * @param status - Résultat du check (UP, DOWN, TIMEOUT)
-   * @param failureThreshold - Nombre d'échecs consécutifs avant incident
-   * @param errorMessage - Message d'erreur si applicable
+    * Domain workflow triggered after a single check execution.
+    *
+    * @param serviceId - checked service ID
+    * @param status - check outcome (UP, DOWN, TIMEOUT)
+    * @param failureThreshold - consecutive failure count required before opening incident
+    * @param errorMessage - optional error payload from the checker
    */
   async handleCheckResult(serviceId: string, status: CheckStatus, failureThreshold: number, errorMessage: string | null,): Promise<void> {
     const openIncident = await this.repository.findOpenIncident(serviceId);
 
     const service = await this.repository.findServiceByIncidentId(serviceId);
 
-
-    // CAS 1 : Le service est UP
+    // CASE 1: service is UP.
     if (status === 'UP') {
       if (openIncident) {
-        // Il y avait un incident ouvert, on le résout
+        // Open incident exists, resolve it.
         await this.repository.resolveIncident(openIncident.id);
         this.logger.log(
-          `Incident résolu pour service ${serviceId}`,
+          `Incident resolved for service ${serviceId}`,
         );
 
-
-        // Notifier la résolution
+        // Notify incident resolution.
         await this.notifications.notifyAll({
-          title: 'Incident résolu',
-          message: `Le service ${service?.name} est de nouveau UP`,
+          title: 'Incident resolved',
+          message: `Service ${service?.name} is back UP`,
         });
       }
-      // Sinon : rien à faire, tout va bien
+      // No open incident, nothing to do.
       return;
     }
 
-    // CAS 2 : Le service est DOWN/TIMEOUT
+    // CASE 2: service is DOWN/TIMEOUT.
 
-    // Si un incident est déjà ouvert, on ne fait rien (pas de doublon)
+    // Avoid duplicate incidents when one is already open.
     if (openIncident) return;
 
-    // 1. D'abord compter les échecs
+    // 1. Count consecutive failures first.
     const consecutiveFailures = await this.repository.countConsecutiveFailures(
       serviceId,
       failureThreshold,
     );
 
-    // 2. Si seuil PAS atteint : on ne fait rien
+    // 2. Threshold not reached yet.
     if (consecutiveFailures < failureThreshold) {
       return;
     }
 
-    // 3. Seuil atteint : créer l'incident
+    // 3. Threshold reached: open incident.
     await this.repository.openIncident(serviceId, errorMessage);
-    this.logger.warn(`🔴 Incident ouvert pour service ${serviceId}`);
+    this.logger.warn(`Incident opened for service ${serviceId}`);
 
-    // 4. ET SEULEMENT MAINTENANT : notifier
+    // 4. Notify after incident is persisted.
     await this.notifications.notifyAll({
-      title: '🔴 Incident détecté',
-      message: `Le service ${service?.name ?? serviceId} est DOWN. Raison: ${errorMessage ?? 'Inconnue'}`,
+      title: 'Incident detected',
+      message: `Service ${service?.name ?? serviceId} is DOWN. Reason: ${errorMessage ?? 'Unknown'}`,
     });
   }
 
   /**
-   *  Récupère tous les incidents, avec leurs détails (service, timestamps, etc).
-   * @returns  Une liste d'incidents.
-   * @throws Error si la requête échoue.
-   * 
-   * Note : Cette méthode peut être utilisée pour afficher un tableau de bord des incidents.
+   * Returns all incidents with details (service, timestamps, etc.).
+   * @returns Incident list.
+   * @throws Error when the query fails.
+   *
+   * Typically used by incident dashboards.
    */
   async findAllIncidents() {
     return this.repository.findAllIncidents();
   }
 
   /**
-   * Récupère le nombre total d'incidents ouverts (non résolus).
-   * @returns Un nombre représentant le total d'incidents ouverts.
-   * @throws Error si la requête échoue.
+    * Returns the total number of open incidents.
+    * @returns Number of unresolved incidents.
+    * @throws Error when the query fails.
    */
   async getIncidentsCountOpen() {
     return this.repository.getIncidentsCountOpen();

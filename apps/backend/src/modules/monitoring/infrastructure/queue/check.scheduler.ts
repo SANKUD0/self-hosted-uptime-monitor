@@ -5,11 +5,14 @@ import { PrismaService } from '../../../../shared/database/prisma.service';
 import { CheckJobData } from './check.processor';
 
 /**
- * Au démarrage de l'app, lit tous les services activés
- * et crée un job récurrent pour chacun selon leur intervalSeconds.
+ * On application startup, reads all enabled services and registers
+ * one repeatable monitoring job per service using its intervalSeconds.
  */
 
-// TODO: si dans service on change l'intervalSeconds, Timeout, failureThreshold, etc, il faudrait que le scheduler puisse mettre à jour le job récurrent correspondant (actuellement il ne gère que la création et la suppression de jobs). On peut faire ça en exposant une méthode publique updateSchedule(serviceId: string, newInterval: number) qui supprimerait l'ancien job et en recréerait un nouveau avec le nouvel intervalle.
+// TODO: if intervalSeconds, timeoutMs, or failureThreshold changes on a service,
+// the scheduler should update the corresponding repeatable job. Expose a public
+// updateSchedule(serviceId: string, newInterval: number) method that removes the
+// previous job and re-registers it with the new interval.
 @Injectable()
 export class CheckScheduler implements OnModuleInit {
   private readonly logger = new Logger(CheckScheduler.name);

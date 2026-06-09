@@ -6,8 +6,8 @@ export class IncidentsRepository {
   constructor(private readonly prisma: PrismaService) { }
 
   /**
-   * Trouve l'incident ouvert (non résolu) pour un service.
-   * Retourne null s'il n'y en a pas.
+    * Finds the currently open incident for a service.
+    * Returns null when none exists.
    */
   async findOpenIncident(serviceId: string) {
     return await this.prisma.incident.findFirst({
@@ -19,20 +19,20 @@ export class IncidentsRepository {
   }
 
   /**
-   * Ouvre un nouvel incident pour un service.
+    * Opens a new incident for a service.
    */
   async openIncident(serviceId: string, reason: string | null) {
     return await this.prisma.incident.create({
       data: {
         serviceId,
         reason,
-        // startedAt et notifiedStart/End ont des defaults dans le schema
+        // startedAt and notification flags use schema defaults.
       },
     });
   }
 
   /**
-   * Marque un incident comme résolu (resolvedAt = now).
+   * Marks an incident as resolved (resolvedAt = now).
    */
   async resolveIncident(incidentId: string) {
     return await this.prisma.incident.update({
@@ -42,11 +42,11 @@ export class IncidentsRepository {
   }
 
   /**
-   * Compte les N derniers checks consécutifs DOWN/TIMEOUT pour un service.
-   * Utilisé pour détecter le seuil d'échecs.
+   * Counts the N most recent consecutive DOWN/TIMEOUT checks for a service.
+   * Used to evaluate the failure threshold.
    */
   async countConsecutiveFailures(serviceId: string, limit: number): Promise<number> {
-    // On récupère les N derniers checks (ordre desc)
+    // Load the N latest checks ordered from newest to oldest.
     const recentChecks = await this.prisma.check.findMany({
       where: { serviceId },
       orderBy: { timestamp: 'desc' },
@@ -54,7 +54,7 @@ export class IncidentsRepository {
       select: { status: true },
     });
 
-    // On compte les échecs depuis le plus récent jusqu'à trouver un UP
+    // Count failures until the first UP status is encountered.
     let consecutiveFailures = 0;
     for (const check of recentChecks) {
       if (check.status === 'UP') break;
@@ -65,12 +65,12 @@ export class IncidentsRepository {
   }
 
   /**
-   * Récupère tous les incidents, avec leurs détails (service, timestamps, etc).
-   * 
-   * @returns  Une liste d'incidents.
-   * @throws Error si la requête échoue.
-   * 
-   * Note : Cette méthode peut être utilisée pour afficher un tableau de bord des incidents.
+    * Returns all incidents with associated details (service, timestamps, etc.).
+    *
+    * @returns Incident list.
+    * @throws Error when the query fails.
+    *
+    * Useful for incident dashboard rendering.
    */
   async findAllIncidents() {
     try {
@@ -97,9 +97,9 @@ export class IncidentsRepository {
     }
   }
   /**
-   * Récupère le nombre total d'incidents ouverts (non résolus).
-   * @returns Un nombre représentant le total d'incidents ouverts.
-   * @throws Error si la requête échoue.
+    * Returns the total number of open incidents.
+    * @returns Number of unresolved incidents.
+    * @throws Error when the query fails.
    */
   async getIncidentsCountOpen() {
     try {

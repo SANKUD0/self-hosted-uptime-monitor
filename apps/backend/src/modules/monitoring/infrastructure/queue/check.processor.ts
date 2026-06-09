@@ -12,20 +12,20 @@ import { IncidentsService } from '../../../incidents/application/incidents.servi
 import { MonitoringServiceStateRepository } from '../monitoring-service-state.repository';
 
 /**
- * Données passées au job
+ * Payload sent to BullMQ check jobs.
  */
 export interface CheckJobData {
   serviceId: string;
 }
 
 /**
- * Le worker qui exécute les checks.
- * 
- * Pour chaque job dans la queue "checks":
- * 1. Charge le service depuis la DB
- * 2. Choisit le bon checker selon service.type (pattern Strategy)
- * 3. Exécute le check
- * 4. Sauvegarde le résultat dans la table Check
+ * Worker responsible for executing health checks.
+ *
+ * For each job in the "checks" queue:
+ * 1. Load service configuration from the database
+ * 2. Pick checker strategy based on service type
+ * 3. Execute the check
+ * 4. Persist result in the Check table
  */
 @Processor('checks')
 export class CheckProcessor extends WorkerHost {
@@ -42,7 +42,7 @@ export class CheckProcessor extends WorkerHost {
     private readonly monitoringServiceStateRepository: MonitoringServiceStateRepository,
   ) {
     super();
-    // On mappe chaque type vers son checker (pattern Strategy)
+    // Map each service type to its checker implementation (Strategy pattern).
     this.checkers = {
       HTTP: httpChecker,
       TCP: tcpChecker,
@@ -54,33 +54,33 @@ export class CheckProcessor extends WorkerHost {
   async process(job: Job<CheckJobData>): Promise<void> {
     const { serviceId } = job.data;
 
-    // 1. Charger le service depuis la DB
+    // 1. Load service configuration from the database.
     const service = await this.prisma.service.findUnique({
       where: { id: serviceId },
     });
 
     if (!service) {
-      this.logger.warn(`Service ${serviceId} introuvable, skip.`);
+      this.logger.warn(`Service ${serviceId} not found, skipping check.`);
       return;
     }
 
-    // Si le service a été désactivé entre-temps, on skip
+    // Skip if the service was disabled after scheduling but before execution.
     if (!service.enabled) {
-      this.logger.debug(`Service ${service.name} désactivé, skip.`);
+      this.logger.debug(`Service ${service.name} is disabled, skipping check.`);
       return;
     }
 
-    // 2. Choisir le bon checker (pattern Strategy)
+    // 2. Resolve checker implementation (Strategy pattern).
     const checker = this.checkers[service.type];
 
-    // 3. Exécuter le check
+    // 3. Execute health check.
     const result = await checker.check(service.target, service.timeoutMs);
 
     this.logger.log(
       `[${service.name}] ${result.status} - ${result.latencyMs}ms`,
     );
 
-    // 4. Sauvegarder le résultat
+    // 4. Persist check result.
     await this.prisma.check.create({
       data: {
         serviceId: service.id,
@@ -91,7 +91,7 @@ export class CheckProcessor extends WorkerHost {
       },
     });
 
-    // Déléguer la logique d'incidents
+    // Delegate incident state transitions to the incidents application service.
     await this.incidentsService.handleCheckResult(
       service.id,
       result.status,
@@ -99,21 +99,21 @@ export class CheckProcessor extends WorkerHost {
       result.error ?? null,
     );
 
-    // 5. Mettre à jour le dernier état du service (UP/DOWN) pour affichage rapide
-    // Transaction pour éviter les conflits de mise à jour concurrente entre le CheckProcessor et la route GET /services/:id qui lit aussi ServiceState
+    // 5. Update latest service projection (ServiceState) for dashboard reads.
+    // Use a transaction to avoid concurrent projection update conflicts.
     await this.prisma.$transaction(async (tx) => {
       const currentStateService = await tx.serviceState.findUnique({
         where: { serviceId: service.id },
       });
-      // Chercher le check le plus récent pour voir si serviceState et check son identiques, si oui on fait rien, sinon on met à jour le serviceState
+      // Read latest check to detect no-op projection updates.
       const latestCheck = await tx.check.findFirst({
         where: { serviceId: service.id },
         orderBy: { timestamp: 'desc' },
       });
 
       if (latestCheck && currentStateService && latestCheck.id === currentStateService.latestCheckId) {
-        // Si rien n'a changé depuis le dernier check, on ne met pas à jour le serviceState pour éviter les écritures inutiles
-        // Cependant, on met à jour la latence même si le statut n'a pas changé, pour avoir des données de latence à jour dans le dashboard
+        // Avoid unnecessary writes when projection already reflects latest check.
+        // Latency still gets refreshed for dashboard freshness.
         this.monitoringServiceStateRepository.updateLatency(service.id, latestCheck.latencyMs, new Date(), latestCheck.id);
         return;
       }

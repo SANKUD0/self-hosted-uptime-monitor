@@ -8,13 +8,13 @@ datasource db {
 }
 
 // =====================================================
-// Service : les services que tu monitores
+// Service: monitored service definitions
 // =====================================================
 model Service {
   id               String      @id @default(cuid())
   name             String
   type             ServiceType
-  target           String // URL pour HTTP, host:port pour TCP, etc.
+  target           String // HTTP URL, TCP host:port, etc.
   intervalSeconds  Int         @default(60)
   timeoutMs        Int         @default(5000)
   failureThreshold Int         @default(3)
@@ -30,7 +30,7 @@ model Service {
 }
 
 // =====================================================
-// Check : chaque résultat de check (historique)
+// Check: historical check results
 // =====================================================
 model Check {
   id         String      @id @default(cuid())
@@ -46,7 +46,7 @@ model Check {
 }
 
 // =====================================================
-// Incident : un incident = une période où un service était DOWN
+// Incident: a downtime window for a service
 // =====================================================
 model Incident {
   id            String    @id @default(cuid())
@@ -78,7 +78,7 @@ enum CheckStatus {
 }
 
 // =====================================================
-// Current state of the service (non historique, juste le dernier résultat)
+// Current service state projection (latest status only, non-historical)
 // =====================================================
 model ServiceState {
   id            String      @id @default(cuid())
@@ -93,13 +93,13 @@ model ServiceState {
 }
 
 // =====================================================
-// UserContact : les moyens de contacter pour les alertes
+// UserContact: alert delivery endpoints
 // =====================================================
 model UserContact {
   id        String      @id @default(cuid())
-  label     String      // ex: "Mon iPhone perso", "Email principal"
+  label     String      // e.g. "Personal iPhone", "Primary email"
   type      ContactType
-  value     String      // email pour EMAIL, numéro 10 chiffres pour SMS
+  value     String      // EMAIL address or DISCORD webhook URL
   enabled   Boolean     @default(true)
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
