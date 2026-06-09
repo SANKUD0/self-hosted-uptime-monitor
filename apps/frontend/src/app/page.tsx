@@ -1,13 +1,15 @@
 "use client";
 
 import { StatCard } from "@/components/StatCard";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { TableFetchError } from "@/components/ui/fetch-error/table-fetch-error";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { api, incidentsResponse, servicesMonitoringResponse } from "@/lib/api";
-import { ExternalLink } from "lucide-react";
-import { error } from "next/dist/build/output/log";
+import { Activity, AlertTriangle, ArrowDownCircle, ArrowUpCircle, ExternalLink, RefreshCw, Server } from "lucide-react";
 import { useEffect, useState } from "react";
+
+const DASHBOARD_REFRESH_INTERVAL_MS = 30000;
 
 export default function Home() {
   const [count, setCount] = useState<number | null>(null);
@@ -25,52 +27,80 @@ export default function Home() {
   const [incidentsData, setIncidentsData] = useState<incidentsResponse[]>([]);
   const [errorIncidentsData, setErrorIncidentsData] = useState<string | null>(null);
 
-  const fetchServicesData = async () => {
-    api.services.getCount()
-      .then((data) => setCount(data.count))
-      .catch((err) => setErrorCount(err.message))
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [hasGlobalError, setHasGlobalError] = useState(false);
 
-    api.services.getCountUp()
-      .then((data) => setUp(data.upServices))
-      .catch((err) => setErrorUp(err.message))
+  const latencyItems = monitoringData
+    .filter((entry) => entry.latencyMs !== null)
+    .sort((a, b) => (b.latencyMs ?? 0) - (a.latencyMs ?? 0))
+    .slice(0, 8)
+    .map((entry) => ({
+      id: entry.id,
+      serviceName: entry.service.name,
+      latencyMs: entry.latencyMs ?? 0,
+      status: entry.status,
+    }));
 
-    api.services.getCountDown()
-      .then((data) => setDown(data.downServices))
-      .catch((err) => setErrorDown(err.message))
+  const upCount = monitoringData.filter((entry) => entry.status === "UP").length;
+  const downCount = monitoringData.filter((entry) => entry.status !== "UP").length;
 
+  const refreshDashboardHttpData = async () => {
+    setIsRefreshing(true);
+    try {
+      const [servicesCount, servicesUp, servicesDown, incidentsCount, incidentsList, monitoringList] = await Promise.all([
+        api.services.getCount(),
+        api.services.getCountUp(),
+        api.services.getCountDown(),
+        api.incidents.getCount(),
+        api.incidents.getAll(),
+        api.monitoring.getAll(),
+      ]);
+
+      setCount(servicesCount.count);
+      setUp(servicesUp.upServices);
+      setDown(servicesDown.downServices);
+      setIncidents(incidentsCount.count);
+      setIncidentsData(incidentsList);
+      setMonitoringData(monitoringList);
+
+      setErrorCount(null);
+      setErrorUp(null);
+      setErrorDown(null);
+      setErrorIncidents(null);
+      setErrorIncidentsData(null);
+      setErrorMonitoring(null);
+      setHasGlobalError(false);
+      setLastUpdated(new Date());
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Unknown error";
+      // Keep previous successful data on screen and expose the refresh failure in all widgets.
+      setErrorCount(message);
+      setErrorUp(message);
+      setErrorDown(message);
+      setErrorIncidents(message);
+      setErrorIncidentsData(message);
+      setErrorMonitoring(message);
+      setHasGlobalError(true);
+    } finally {
+      setIsRefreshing(false);
+    }
   };
-  const fetchIncidentsData = async () => {
-    api.incidents.getAll()
-      .then((data) => setIncidentsData(data))
-      .catch((err) => setErrorIncidentsData(err.message));
-    api.incidents.getCount()
-      .then((data) => setIncidents(data.count))
-      .catch((err) => setErrorIncidents(err.message))
-  }
-  const fetchMonitoringData = async () => {
-    api.monitoring.getAll()
-      .then((data) => setMonitoringData(data))
-      .catch((err) => setErrorMonitoring(err.message));
-  }
 
   useEffect(() => {
-    // fetch all stats on component mount
-    fetchServicesData();
-    fetchIncidentsData();
-    fetchMonitoringData();
+    // Load all dashboard data through HTTP first; this function can later be replaced by WebSocket event handlers.
+    void refreshDashboardHttpData();
 
-    // TODO: Dans le futurs, on pourrait utiliser WebSocket pour éviter de faire du polling
-    // TODO: Dans le futurs, l'utilisateur pourrait configurer la fréquence de rafraîchissement des données
+    // TODO: Replace polling with a WebSocket stream when backend events are available.
+    // TODO: Expose a user setting to customize refresh frequency.
 
-    const interval = setInterval(fetchServicesData, 30000); // 30 secondes
-    const intervalIncidents = setInterval(fetchIncidentsData, 30000); // 30 seconds
-    const intervalMonitoring = setInterval(fetchMonitoringData, 30000); // 30 seconds
+    const interval = setInterval(() => {
+      void refreshDashboardHttpData();
+    }, DASHBOARD_REFRESH_INTERVAL_MS);
 
     return () => {
-      // cleanup all intervals on component unmount
+      // Cleanup interval on component unmount.
       clearInterval(interval);
-      clearInterval(intervalIncidents);
-      clearInterval(intervalMonitoring);
     };
   }, []);
 
@@ -87,14 +117,82 @@ export default function Home() {
   };
 
   return (
-    <div className="m-10">
-      <div className="grid grid-cols-4 gap-5 mb-6 text-center">
-        <StatCard title="Registered Services" value={count} error={errorCount} />
-        <StatCard title="Services UP" value={up} error={errorUp} />
-        <StatCard title="Services DOWN" value={down} error={errorDown} />
-        <StatCard title="Incidents OPEN" value={incidents} error={errorIncidents} />
+    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-10">
+      {/* Page header with live status and manual refresh */}
+      <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="flex size-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <Activity className="size-5" />
+            </span>
+            <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
+          </div>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Real-time overview of your monitored services and incidents.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 rounded-lg border bg-card px-3 py-1.5 text-xs text-muted-foreground">
+            <span className="relative flex size-2">
+              <span
+                className={`absolute inline-flex h-full w-full rounded-full opacity-75 ${hasGlobalError ? "bg-red-500" : "animate-ping bg-emerald-500"}`}
+              />
+              <span className={`relative inline-flex size-2 rounded-full ${hasGlobalError ? "bg-red-500" : "bg-emerald-500"}`} />
+            </span>
+            <span>
+              {hasGlobalError
+                ? "Connection issue"
+                : lastUpdated
+                  ? `Updated ${lastUpdated.toLocaleTimeString()}`
+                  : "Connecting…"}
+            </span>
+          </div>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => void refreshDashboardHttpData()}
+            disabled={isRefreshing}
+            className="cursor-pointer"
+          >
+            <RefreshCw className={`size-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
+            Refresh
+          </Button>
+        </div>
+      </header>
+
+      {/* Key metrics */}
+      <div className="grid grid-cols-2 gap-4 mb-6 lg:grid-cols-4">
+        <StatCard title="Registered Services" value={count} error={errorCount} icon={Server} accent="default" />
+        <StatCard title="Services UP" value={up} error={errorUp} icon={ArrowUpCircle} accent="success" />
+        <StatCard title="Services DOWN" value={down} error={errorDown} icon={ArrowDownCircle} accent="danger" />
+        <StatCard title="Incidents OPEN" value={incidents} error={errorIncidents} icon={AlertTriangle} accent="warning" />
       </div>
-      <div className="w-full">
+
+      <div className="grid grid-cols-1 gap-6 mb-6 xl:grid-cols-3">
+        <Card className="xl:col-span-2">
+          <CardHeader>
+            <CardTitle>Latency by Service</CardTitle>
+            <CardDescription>Current HTTP snapshot sorted by highest latency</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <LatencyBarChart items={latencyItems} />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Service Health Split</CardTitle>
+            <CardDescription>Live UP vs DOWN ratio from HTTP polling</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ServiceHealthDonut upCount={upCount} downCount={downCount} />
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="space-y-6">
 
         <Card>
           <CardHeader>
@@ -116,7 +214,13 @@ export default function Home() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {errorMonitoring ? (<TableFetchError colSpan={7} message={errorMonitoring} />) : (
+                {errorMonitoring ? (<TableFetchError colSpan={8} message={errorMonitoring} />) : monitoringData.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="py-8 text-center text-muted-foreground">
+                      No services are being monitored yet.
+                    </TableCell>
+                  </TableRow>
+                ) : (
                   <>
                     {monitoringData.map((entry) => (
                       <TableRow key={entry.id} className={entry.status === "DOWN" ? "bg-red-500/5" : ""}>
@@ -190,7 +294,13 @@ export default function Home() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {errorIncidentsData ? (<TableFetchError colSpan={6} message={errorIncidentsData} />) : (
+                {errorIncidentsData ? (<TableFetchError colSpan={6} message={errorIncidentsData} />) : incidentsData.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
+                      No incidents reported. All systems operational.
+                    </TableCell>
+                  </TableRow>
+                ) : (
                   <>
                     {incidentsData.map((entry) => {
                       const isOpen = !entry.resolvedAt;
@@ -220,6 +330,98 @@ export default function Home() {
             </Table>
           </CardContent>
         </Card>
+      </div>
+    </div>
+  );
+}
+
+function LatencyBarChart({
+  items,
+}: {
+  items: Array<{ id: string; serviceName: string; latencyMs: number; status: string }>;
+}) {
+  if (items.length === 0) {
+    return <p className="text-sm text-muted-foreground">No latency data available yet.</p>;
+  }
+
+  const maxLatency = Math.max(...items.map((item) => item.latencyMs), 1);
+
+  return (
+    <div className="space-y-3">
+      {items.map((item) => {
+        const widthPercent = Math.max((item.latencyMs / maxLatency) * 100, 4);
+        return (
+          <div key={item.id} className="grid grid-cols-[180px_1fr_72px] items-center gap-3">
+            <p className="truncate text-sm font-medium" title={item.serviceName}>
+              {item.serviceName}
+            </p>
+            <div className="h-2 rounded-full bg-muted">
+              <div
+                className={`h-2 rounded-full transition-all ${item.status === "UP" ? "bg-emerald-500" : "bg-red-500"}`}
+                style={{ width: `${widthPercent}%` }}
+              />
+            </div>
+            <p className="text-right text-xs text-muted-foreground">{item.latencyMs} ms</p>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function ServiceHealthDonut({ upCount, downCount }: { upCount: number; downCount: number }) {
+  const total = upCount + downCount;
+
+  if (total === 0) {
+    return <p className="text-sm text-muted-foreground">No service health data available yet.</p>;
+  }
+
+  const radius = 54;
+  const circumference = 2 * Math.PI * radius;
+  const upRatio = upCount / total;
+  const upStroke = circumference * upRatio;
+  const downStroke = circumference - upStroke;
+
+  return (
+    <div className="flex items-center justify-between gap-4">
+      <div className="relative h-36 w-36">
+        <svg viewBox="0 0 140 140" className="h-36 w-36 -rotate-90">
+          <circle cx="70" cy="70" r={radius} className="fill-none stroke-muted" strokeWidth="14" />
+          <circle
+            cx="70"
+            cy="70"
+            r={radius}
+            className="fill-none stroke-emerald-500"
+            strokeWidth="14"
+            strokeDasharray={`${upStroke} ${circumference}`}
+            strokeLinecap="round"
+          />
+          <circle
+            cx="70"
+            cy="70"
+            r={radius}
+            className="fill-none stroke-red-500"
+            strokeWidth="14"
+            strokeDasharray={`${downStroke} ${circumference}`}
+            strokeDashoffset={-upStroke}
+            strokeLinecap="round"
+          />
+        </svg>
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <p className="text-xs text-muted-foreground">Services</p>
+          <p className="text-xl font-bold">{total}</p>
+        </div>
+      </div>
+
+      <div className="space-y-2 text-sm">
+        <div className="flex items-center gap-2">
+          <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
+          <span>UP: {upCount}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
+          <span>DOWN: {downCount}</span>
+        </div>
       </div>
     </div>
   );

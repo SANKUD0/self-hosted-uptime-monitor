@@ -76,7 +76,7 @@ export default function ServicesPage() {
                     <h1 className="text-2xl font-bold">
                         Services
                         <span className="ml-2 text-sm font-normal text-muted-foreground">
-                            ({services.length})
+                            ({services.length ?? 0})
                         </span>
                     </h1>
 
