@@ -113,4 +113,22 @@ export class IncidentsRepository {
       throw new Error(`Failed to fetch incidents count: ${error}`);
     }
   }
+
+  /**
+    * Resolves an incident with a specified root cause.
+    * @param id - Incident ID to resolve.
+    * @param rootCause - Root cause of the incident.
+    * @returns The resolved incident.
+    * @throws Error when the resolution fails.
+   */
+  async resolveIncidentWithRootCause(id: string, rootCause: string) {
+    try {
+      return await this.prisma.incident.update({
+        where: { id },
+        data: { resolvedAt: new Date(), rootCause },
+      });
+    } catch (error) {
+      throw new Error(`Failed to resolve incident with id ${id}: ${error}`);
+    }
+  }
 }

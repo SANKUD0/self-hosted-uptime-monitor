@@ -95,4 +95,19 @@ export class IncidentsService {
   async getIncidentsCountOpen() {
     return this.repository.getIncidentsCountOpen();
   }
+
+  /**
+    * Resolves an incident with a specified root cause.
+    * @param id - Incident ID to resolve.
+    * @param rootCause - Root cause of the incident.
+    * @returns The resolved incident.
+    * @throws Error when the resolution fails.
+   */
+  async resolveIncident(id: string, rootCause: string) {
+    try {
+      return await this.repository.resolveIncidentWithRootCause(id, rootCause);
+    } catch (error) {
+      throw new Error(`Failed to resolve incident with id ${id}: ${error}`);
+    }
+  }
 }
