@@ -12,11 +12,11 @@ import { RealtimeEventMap, RealtimeEventName } from '../domain/realtime-events';
 /**
  * This class represents a WebSocket gateway for real-time communication.
  * It handles client connections, disconnections, and broadcasting of events.
- * The gateway is configured to allow CORS from 'http://localhost:3000' and uses the '/realtime' namespace.
+ * The gateway is configured to allow CORS from 'http://localhost:3000' and 'http://localhost:3003' and uses the '/realtime' namespace.
  */
 //TODO: Make compatible with docker and load balancing
 @WebSocketGateway({
-  cors: { origin: 'http://localhost:3000', credentials: true },
+  cors: { origin: ['http://localhost:3000', 'http://localhost:3003'], credentials: true },
   namespace: '/realtime',
 })
 export class RealtimeGateway
