@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { CheckStatus } from '@prisma/client';
 import { IncidentsRepository } from '../infrastructure/incidents.repository';
 import { NotificationsService } from '../../notifications/application/notifications.service';
+import { RealtimeService } from '../../realtime/application/realtime.service';
 
 /**
  * Application service orchestrating incident lifecycle logic.
@@ -14,7 +15,8 @@ export class IncidentsService {
 
   constructor(
     private readonly repository: IncidentsRepository,
-    private readonly notifications: NotificationsService
+    private readonly notifications: NotificationsService,
+    private readonly realtimeService: RealtimeService
   ) { }
 
   /**
@@ -44,6 +46,14 @@ export class IncidentsService {
           title: 'Incident resolved',
           message: `Service ${service?.name} is back UP`,
         });
+
+        this.realtimeService.broadcastIncidentsUpdate({
+          id: openIncident.id,
+          startedAt: openIncident.startedAt.toISOString(),
+          resolvedAt: new Date().toISOString(),
+          reason: openIncident.reason,
+          service: { name: service?.name ?? serviceId },
+        });
       }
       // No open incident, nothing to do.
       return;
@@ -66,13 +76,21 @@ export class IncidentsService {
     }
 
     // 3. Threshold reached: open incident.
-    await this.repository.openIncident(serviceId, errorMessage);
+    const newIncident = await this.repository.openIncident(serviceId, errorMessage);
     this.logger.warn(`Incident opened for service ${serviceId}`);
 
     // 4. Notify after incident is persisted.
     await this.notifications.notifyAll({
       title: 'Incident detected',
       message: `Service ${service?.name ?? serviceId} is DOWN. Reason: ${errorMessage ?? 'Unknown'}`,
+    });
+
+    this.realtimeService.broadcastIncidentsUpdate({
+      id: newIncident.id,
+      startedAt: newIncident.startedAt.toISOString(),
+      resolvedAt: null,
+      reason: errorMessage,
+      service: { name: service?.name ?? serviceId },
     });
   }
 
