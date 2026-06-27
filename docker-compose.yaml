@@ -1,59 +1,30 @@
 services:
-  postgres:
-    image: postgres:18.3-alpine3.22
-    container_name: opennotify-postgres
+  frontend:
+    build:
+      context: ./apps/frontend
+    container_name: opennotify-frontend
     restart: unless-stopped
+    ports:
+      - "3003:3000"
+    env_file:
+      - ./apps/frontend/.env.local
     environment:
-      POSTGRES_USER: opennotify
-      POSTGRES_PASSWORD: su2026
-      POSTGRES_DB: opennotify
-    ports:
-      - "5433:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U opennotify"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
+      - MONOLITH_API_URL=http://opennotify-backend:3004
+    networks:
+      - opennotify-net
 
-  redis:
-    image: redis:8.4.2-alpine3.22
-    container_name: opennotify-redis
+  backend:
+    build:
+      context: ./apps/backend
+    container_name: opennotify-backend
     restart: unless-stopped
     ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
+      - "3004:3001"
+    env_file:
+      - ./apps/backend/.env
+    networks:
+      - opennotify-net
 
-  # backend:
-  #   build:
-  #     context: .
-  #     dockerfile: apps/backend/Dockerfile
-  #   container_name: opennotify-backend
-  #   restart: unless-stopped
-  #   ports:
-  #     - "3000:3000"
-  #   environment:
-  #     # Attention : on utilise le nom du service "postgres", pas localhost,
-  #     # et le port interne 5432 (pas 5433 qui est le mapping hôte)
-  #     DATABASE_URL: "postgresql://opennotify:su2026@postgres:5432/opennotify"
-  #     REDIS_HOST: redis
-  #     REDIS_PORT: 6379
-  #     API_PORT: 3000
-  #     API_HOST: 0.0.0.0
-  #     NODE_ENV: production
-  #   depends_on:
-  #     postgres:
-  #       condition: service_healthy
-  #     redis:
-  #       condition: service_healthy
-
-volumes:
-  postgres_data:
-  redis_data:
+networks:
+  opennotify-net:
+    driver: bridge
