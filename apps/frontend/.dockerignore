@@ -1,3 +1,112 @@
+# Dependencies
 node_modules
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+pnpm-debug.log
+.pnpm-store
+.yarn
+.npm
+
+# Next.js build output
+.next
+out
+build
 dist
+next-env.d.ts
+*.tsbuildinfo
+
+# Next.js cache
+.swc
+.turbo
+.vercel
+
+# Environment files
 .env
+.env.*
+!.env.example
+
+# VS Code
+.vscode
+.vscode-test
+.history
+*.code-workspace
+
+# Other editors
+.idea
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Git
+.git
+.gitignore
+.gitattributes
+.github
+
+# Tests & coverage
+coverage
+.nyc_output
+*.lcov
+test
+tests
+__tests__
+__mocks__
+*.spec.ts
+*.spec.tsx
+*.test.ts
+*.test.tsx
+jest.config.*
+jest.setup.*
+playwright-report
+playwright/.cache
+test-results
+cypress
+cypress.config.*
+.jestcache
+
+# Storybook
+storybook-static
+.storybook
+
+# Logs
+logs
+*.log
+
+# Docker
+Dockerfile
+Dockerfile.*
+docker-compose*.yml
+docker-compose*.yaml
+.dockerignore
+
+# CI / CD
+.gitlab-ci.yml
+.travis.yml
+.circleci
+azure-pipelines.yml
+
+# Documentation
+README.md
+CHANGELOG.md
+LICENSE
+docs
+*.md
+
+# Linting / Formatting
+.eslintrc*
+.eslintcache
+.prettierrc*
+.prettierignore
+.editorconfig
+.stylelintrc*
+
+# Misc
+tmp
+temp
+*.bak
+*.tmp
+.cache
+.husky
+.nvmrc
