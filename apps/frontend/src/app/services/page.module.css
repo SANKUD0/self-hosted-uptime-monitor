@@ -1,0 +1,31 @@
+.toggle input {
+    display: none;
+}
+
+.toggle label {
+    width: 36px;
+    height: 20px;
+    background: red;
+    border-radius: 999px;
+    cursor: pointer;
+    position: relative;
+    display: block;
+    transition: background 0.25s;
+}
+
+.toggle label::after {
+    content: '';
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    background: white;
+    border-radius: 50%;
+    top: 3px;
+    left: 3px;
+    transition: transform 0.25s;
+}
+
+.toggle input:checked + label { background: #1D9E75; }
+.toggle input:checked + label::after {
+  transform: translateX(16px);
+}

@@ -96,9 +96,34 @@ export class MonitoringServiceStateRepository {
                         name: true,
                         type: true,
                         target: true,
+                        enabled: true,
                     }
                 }
             }
         });
+    }
+
+    /**
+     * Récupère les 5 derniers checks d'un service pour affichage dans le détail du service
+     * @param serviceId - ID du service
+     * @return Liste des 5 derniers checks ou une liste vide en cas d'erreur ou si aucun check trouvé
+     */
+    async get5firstRecentChecksForService(serviceId: string) {
+        try {
+            const recentsChecks = await this.prisma.check.findMany({
+                where: {
+                    serviceId: serviceId
+                },
+                orderBy: {
+                    timestamp: 'desc'
+                },
+                take: 5
+            });
+            if (!recentsChecks) return [];
+            return recentsChecks;
+        } catch (error) {
+            console.error(`Erreur lors de la récupération des 5 derniers checks pour le service ${serviceId}: ${new Date()}`, error);
+            return [];
+        }
     }
 }

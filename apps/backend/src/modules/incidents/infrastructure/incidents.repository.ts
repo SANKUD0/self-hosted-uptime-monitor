@@ -6,11 +6,11 @@ export class IncidentsRepository {
   constructor(private readonly prisma: PrismaService) { }
 
   /**
-   * Trouve l'incident ouvert (non résolu) pour un service.
-   * Retourne null s'il n'y en a pas.
+    * Finds the currently open incident for a service.
+    * Returns null when none exists.
    */
-  findOpenIncident(serviceId: string) {
-    return this.prisma.incident.findFirst({
+  async findOpenIncident(serviceId: string) {
+    return await this.prisma.incident.findFirst({
       where: {
         serviceId,
         resolvedAt: null,
@@ -19,34 +19,34 @@ export class IncidentsRepository {
   }
 
   /**
-   * Ouvre un nouvel incident pour un service.
+    * Opens a new incident for a service.
    */
-  openIncident(serviceId: string, reason: string | null) {
-    return this.prisma.incident.create({
+  async openIncident(serviceId: string, reason: string | null) {
+    return await this.prisma.incident.create({
       data: {
         serviceId,
         reason,
-        // startedAt et notifiedStart/End ont des defaults dans le schema
+        // startedAt and notification flags use schema defaults.
       },
     });
   }
 
   /**
-   * Marque un incident comme résolu (resolvedAt = now).
+   * Marks an incident as resolved (resolvedAt = now).
    */
-  resolveIncident(incidentId: string) {
-    return this.prisma.incident.update({
+  async resolveIncident(incidentId: string) {
+    return await this.prisma.incident.update({
       where: { id: incidentId },
       data: { resolvedAt: new Date() },
     });
   }
 
   /**
-   * Compte les N derniers checks consécutifs DOWN/TIMEOUT pour un service.
-   * Utilisé pour détecter le seuil d'échecs.
+   * Counts the N most recent consecutive DOWN/TIMEOUT checks for a service.
+   * Used to evaluate the failure threshold.
    */
   async countConsecutiveFailures(serviceId: string, limit: number): Promise<number> {
-    // On récupère les N derniers checks (ordre desc)
+    // Load the N latest checks ordered from newest to oldest.
     const recentChecks = await this.prisma.check.findMany({
       where: { serviceId },
       orderBy: { timestamp: 'desc' },
@@ -54,7 +54,7 @@ export class IncidentsRepository {
       select: { status: true },
     });
 
-    // On compte les échecs depuis le plus récent jusqu'à trouver un UP
+    // Count failures until the first UP status is encountered.
     let consecutiveFailures = 0;
     for (const check of recentChecks) {
       if (check.status === 'UP') break;
@@ -65,12 +65,12 @@ export class IncidentsRepository {
   }
 
   /**
-   * Récupère tous les incidents, avec leurs détails (service, timestamps, etc).
-   * 
-   * @returns  Une liste d'incidents.
-   * @throws Error si la requête échoue.
-   * 
-   * Note : Cette méthode peut être utilisée pour afficher un tableau de bord des incidents.
+    * Returns all incidents with associated details (service, timestamps, etc.).
+    *
+    * @returns Incident list.
+    * @throws Error when the query fails.
+    *
+    * Useful for incident dashboard rendering.
    */
   async findAllIncidents() {
     try {
@@ -97,9 +97,9 @@ export class IncidentsRepository {
     }
   }
   /**
-   * Récupère le nombre total d'incidents ouverts (non résolus).
-   * @returns Un nombre représentant le total d'incidents ouverts.
-   * @throws Error si la requête échoue.
+    * Returns the total number of open incidents.
+    * @returns Number of unresolved incidents.
+    * @throws Error when the query fails.
    */
   async getIncidentsCountOpen() {
     try {
@@ -111,6 +111,24 @@ export class IncidentsRepository {
       return count;
     } catch (error) {
       throw new Error(`Failed to fetch incidents count: ${error}`);
+    }
+  }
+
+  /**
+    * Resolves an incident with a specified root cause.
+    * @param id - Incident ID to resolve.
+    * @param rootCause - Root cause of the incident.
+    * @returns The resolved incident.
+    * @throws Error when the resolution fails.
+   */
+  async resolveIncidentWithRootCause(id: string, rootCause: string) {
+    try {
+      return await this.prisma.incident.update({
+        where: { id },
+        data: { resolvedAt: new Date(), rootCause },
+      });
+    } catch (error) {
+      throw new Error(`Failed to resolve incident with id ${id}: ${error}`);
     }
   }
 }

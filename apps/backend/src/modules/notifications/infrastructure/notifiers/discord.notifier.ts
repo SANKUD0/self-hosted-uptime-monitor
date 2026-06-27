@@ -16,8 +16,7 @@ export class DiscordNotifier implements Notifier {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         username: 'OpenNotify',
-        // Le content (texte au-dessus de l'embed) avec @everyone
-        // pour déclencher la notif push
+        // Optional plain content above embeds (for mentions such as @everyone).
         embeds: [
           {
             title: payload.title,
@@ -27,7 +26,7 @@ export class DiscordNotifier implements Notifier {
           },
         ],
         // content: isAlert ? '@everyone' : undefined,
-        // // CRUCIAL : autorise les mentions @everyone depuis le webhook
+        // // IMPORTANT: allow @everyone mentions from this webhook.
         // allowed_mentions: {
         //   parse: ['everyone'],
         // },
@@ -40,6 +39,6 @@ export class DiscordNotifier implements Notifier {
       );
     }
 
-    this.logger.log('Notification Discord envoyée');
+    this.logger.log('Discord notification sent');
   }
 }

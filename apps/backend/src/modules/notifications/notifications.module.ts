@@ -13,6 +13,6 @@ import { DiscordNotifier } from './infrastructure/notifiers/discord.notifier';
     EmailNotifier,
     DiscordNotifier
   ],
-  exports: [NotificationsService], // Pour que IncidentsModule puisse l'utiliser
+  exports: [NotificationsService], // Exported so IncidentsModule can dispatch notifications.
 })
 export class NotificationsModule {}

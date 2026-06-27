@@ -10,6 +10,7 @@ import { IncidentsModule } from '../incidents/incidents.module';
 import { MonitoringServiceStateRepository } from './infrastructure/monitoring-service-state.repository';
 import { MonitoringService } from './application/monitoring.service';
 import { MonitoringController } from './presentation/monitoring.controller';
+import { RealtimeModule } from '../realtime/realtime.module';
 
 @Module({
   controllers: [MonitoringController],
@@ -18,6 +19,7 @@ import { MonitoringController } from './presentation/monitoring.controller';
       name: 'checks',
     }),
     IncidentsModule,
+    RealtimeModule
   ],
   providers: [
     HttpChecker,
@@ -29,5 +31,6 @@ import { MonitoringController } from './presentation/monitoring.controller';
     MonitoringServiceStateRepository,
     MonitoringService,
   ],
+  exports: [CheckScheduler],
 })
 export class MonitoringModule {}

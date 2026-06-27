@@ -1,7 +1,7 @@
 /**
- * Entité Incident : représente une période où un service est DOWN.
- * 
- * Pure logique métier, sans dépendance à Prisma ou NestJS.
+ * Incident entity: represents a time window where a service is DOWN.
+ *
+ * Pure domain logic with no Prisma or NestJS dependencies.
  */
 export class Incident {
   constructor(
@@ -13,15 +13,15 @@ export class Incident {
   ) {}
 
   /**
-   * Un incident est "ouvert" si non résolu.
+   * An incident is considered open until resolved.
    */
   isOpen(): boolean {
     return this.resolvedAt === null;
   }
 
   /**
-   * Durée totale de l'incident en millisecondes.
-   * Si toujours ouvert, calcule depuis startedAt jusqu'à maintenant.
+   * Total incident duration in milliseconds.
+   * For open incidents, computes duration from startedAt to now.
    */
   durationMs(now: Date = new Date()): number {
     const end = this.resolvedAt ?? now;

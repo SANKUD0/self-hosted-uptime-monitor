@@ -7,14 +7,14 @@ export class TcpChecker implements Checker {
   async check(target: string, timeoutMs: number): Promise<CheckResult> {
     const startTime = performance.now();
 
-    // Parser le target "host:port"
+    // Parse target in "host:port" format.
     const parsed = this.parseTarget(target);
     if (!parsed) {
       return {
         status: 'DOWN',
         latencyMs: 0,
         statusCode: HttpStatus.SERVICE_UNAVAILABLE,
-        error: `Format invalide. Attendu: "host:port", reçu: "${target}"`,
+        error: `Invalid format. Expected "host:port", received "${target}"`,
       };
     }
 
@@ -24,7 +24,7 @@ export class TcpChecker implements Checker {
       const socket = new Socket();
       let resolved = false;
 
-      // Helper pour éviter de résoudre 2 fois la Promise
+      // Helper to prevent resolving the Promise more than once.
       const finish = (result: CheckResult) => {
         if (resolved) return;
         resolved = true;
@@ -32,10 +32,10 @@ export class TcpChecker implements Checker {
         resolve(result);
       };
 
-      // Définir le timeout
+      // Configure socket timeout.
       socket.setTimeout(timeoutMs);
 
-      // Événement : connexion réussie
+      // Event: connection established.
       socket.on('connect', () => {
         const latencyMs = Math.round(performance.now() - startTime);
         finish({
@@ -45,18 +45,18 @@ export class TcpChecker implements Checker {
         });
       });
 
-      // Événement : timeout
+      // Event: timeout.
       socket.on('timeout', () => {
         const latencyMs = Math.round(performance.now() - startTime);
         finish({
           status: 'TIMEOUT',
           latencyMs,
           statusCode: HttpStatus.REQUEST_TIMEOUT,
-          error: `Connection timeout après ${timeoutMs}ms`,
+          error: `Connection timeout after ${timeoutMs}ms`,
         });
       });
 
-      // Événement : erreur (connexion refusée, host inconnu, etc.)
+      // Event: connection error (refused, unknown host, etc.).
       socket.on('error', (err) => {
         const latencyMs = Math.round(performance.now() - startTime);
         finish({
@@ -67,7 +67,7 @@ export class TcpChecker implements Checker {
         });
       });
 
-      // Lancer la connexion
+      // Start TCP connection attempt.
       socket.connect(port, host);
     });
   }

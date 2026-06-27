@@ -6,6 +6,7 @@ import { ServicesModule } from './modules/services/services.module';
 import { MonitoringModule } from './modules/monitoring/monitoring.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { IncidentsModule } from './modules/incidents/incidents.module';
+import { RealtimeModule } from './modules/realtime/realtime.module';
 
 @Module({
   imports: [
@@ -20,7 +21,8 @@ import { IncidentsModule } from './modules/incidents/incidents.module';
     ServicesModule,
     MonitoringModule,
     IncidentsModule,
-    NotificationsModule
+    NotificationsModule,
+    RealtimeModule
   ],
 })
 export class AppModule {}

@@ -1,36 +1,122 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# OpenNotify Frontend
+
+OpenNotify frontend is a Next.js App Router application used to visualize monitored services, service health, and incidents from the monolith API.
+
+## Tech Stack
+
+- Next.js 16 (App Router)
+- React 19
+- TypeScript
+- Tailwind CSS 4
+- Reusable UI primitives under src/components/ui
+- Lucide + Iconify icons
+
+## Features
+
+- Dashboard overview
+	- Global service counters: total, up, down
+	- Open incidents counter
+	- Latency chart and UP vs DOWN health split
+	- Monitoring table with latest service checks
+	- Auto-refresh every 30 seconds with manual refresh button
+- Services management
+	- List monitored services
+	- Create a service
+	- Edit service properties
+	- Enable or disable service (optimistic UI update)
+	- Delete service with confirmation dialog
+	- View latest checks for a selected service
+- Incidents view
+	- List incidents with open/resolved status
+	- Incident detail panel with timestamps and duration
+
+## Application Routes
+
+- /: dashboard page
+- /services: services management
+- /incidents: incidents list and details
+
+Navigation is provided by the app sidebar and is mounted from the root layout.
+
+## API Integration
+
+The frontend communicates directly with the monolith backend through the typed client in src/lib/api.ts.
+
+Configured base URL:
+
+- MONOLITH_API_URL (environment variable)
+- Fallback: http://localhost:3001
+
+Main endpoint groups consumed by the UI:
+
+- /services
+- /incidents
+- /monitoring
+
+The API client throws an Error for non-2xx responses so pages and widgets can render consistent fetch-error states.
 
 ## Getting Started
 
-First, run the development server:
+### 1. Install dependencies
+
+pnpm is recommended because the repository includes pnpm-lock.yaml.
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Configure environment variables
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Create a .env.local file in this folder with:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+MONOLITH_API_URL=http://localhost:3001
+```
 
-## Learn More
+Adjust the URL if your backend runs elsewhere.
 
-To learn more about Next.js, take a look at the following resources:
+### 3. Start the development server
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+pnpm dev
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Open http://localhost:3000.
 
-## Deploy on Vercel
+## Available Scripts
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+pnpm dev
+pnpm build
+pnpm start
+pnpm lint
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Project Structure
+
+```text
+src/
+	app/
+		page.tsx                # Dashboard
+		services/page.tsx       # Services CRUD and detail panel
+		incidents/page.tsx      # Incidents table and detail panel
+		layout.tsx              # Root layout + sidebar shell
+	components/
+		app-sidebar.tsx         # Main navigation
+		StatCard.tsx            # Reusable KPI card
+		status.tsx              # Status badges
+		ui/                     # Shared UI primitives and error states
+	lib/
+		api.ts                  # Typed API client
+		duration.ts             # Duration and time helpers
+		utils.ts                # Styling utility helpers
+	hooks/
+		use-mobile.ts           # Mobile breakpoint hook
+```
+
+## Notes For Contributors
+
+- Keep business/data-fetching logic in page-level containers and reuse presentational components from src/components.
+- Reuse the typed methods in src/lib/api.ts instead of ad-hoc fetch calls.
+- Prefer existing UI primitives from src/components/ui before introducing new patterns.
+- Keep user-facing strings consistent in language per page when making updates.

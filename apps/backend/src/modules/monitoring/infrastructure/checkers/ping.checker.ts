@@ -9,15 +9,15 @@ export class PingChecker implements Checker {
 
     try {
       const result = await ping.promise.probe(target, {
-        timeout: Math.ceil(timeoutMs / 1000), // ping veut des secondes
+        timeout: Math.ceil(timeoutMs / 1000), // ping expects seconds
         min_reply: 1,
-        extra: ['-n', '1'], // Windows: 1 paquet. Linux: utilise '-c 1'
+        extra: ['-n', '1'], // Windows: one packet. Linux equivalent: '-c 1'.
       });
 
       const latencyMs = Math.round(performance.now() - startTime);
 
       if (result.alive) {
-        // result.time est en ms, peut être 'unknown' si pas parsable
+        // result.time is in ms and may be 'unknown' if not parseable.
         const pingTime =
           typeof result.time === 'number' ? Math.round(result.time) : latencyMs;
 

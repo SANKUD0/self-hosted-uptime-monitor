@@ -12,19 +12,19 @@ export class EmailNotifier implements Notifier, OnModuleInit {
     this.transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
       port: Number(process.env.SMTP_PORT),
-      secure: false, // STARTTLS sur 587
+      secure: false, // STARTTLS over port 587
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASSWORD,
       },
     });
 
-    // Vérifier la connexion au démarrage (pour détecter les erreurs vite)
+    // Validate SMTP connectivity at startup for fast feedback.
     try {
       await this.transporter.verify();
-      this.logger.log('SMTP transporter prêt');
+      this.logger.log('SMTP transporter ready');
     } catch (err) {
-      this.logger.error('SMTP transporter en échec', err);
+      this.logger.error('SMTP transporter initialization failed', err);
     }
   }
 
@@ -35,6 +35,6 @@ export class EmailNotifier implements Notifier, OnModuleInit {
       subject: payload.title,
       text: payload.message,
     });
-    this.logger.log(`Email envoyé à ${recipient}`);
+    this.logger.log(`Email sent to ${recipient}`);
   }
 }

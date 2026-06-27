@@ -18,28 +18,28 @@ export class UserContactsController {
   constructor(private readonly service: NotificationsService) {}
 
   @Get()
-  findAll() {
-    return this.service.findAll();
+  async findAll() {
+    return await this.service.findAll();
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.service.findOne(id);
+  async findOne(@Param('id') id: string) {
+    return await this.service.findOne(id);
   }
 
   @Post()
-  create(@Body() dto: CreateUserContactDto) {
-    return this.service.create(dto);
+  async create(@Body() dto: CreateUserContactDto) {
+    return await this.service.create(dto);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() dto: UpdateUserContactDto) {
-    return this.service.update(id, dto);
+  async update(@Param('id') id: string, @Body() dto: UpdateUserContactDto) {
+    return await this.service.update(id, dto);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  remove(@Param('id') id: string) {
-    return this.service.remove(id);
+  async remove(@Param('id') id: string) {
+    return await this.service.remove(id);
   }
 }

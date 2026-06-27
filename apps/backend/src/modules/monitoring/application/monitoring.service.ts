@@ -14,4 +14,8 @@ export class MonitoringService {
     async getSpecificServiceState(serviceId: string) {
         return await this.monitoringServiceStateRepository.getSpecificServiceState(serviceId);
     }
+
+    async get5firstRecentChecksForService(serviceId: string) {
+        return await this.monitoringServiceStateRepository.get5firstRecentChecksForService(serviceId);
+    }
 }

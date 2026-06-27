@@ -7,9 +7,9 @@ export class DockerChecker implements Checker {
   private readonly docker: Docker;
 
   constructor() {
-    // dockerode détecte automatiquement la plateforme
-    // Linux/Mac → /var/run/docker.sock
-    // Windows → //./pipe/docker_engine
+    // dockerode auto-detects platform defaults:
+    // Linux/Mac -> /var/run/docker.sock
+    // Windows -> //./pipe/docker_engine
     this.docker = new Docker();
   }
 
@@ -17,7 +17,7 @@ export class DockerChecker implements Checker {
     const startTime = performance.now();
 
     try {
-      // Récupérer le container par son nom (avec timeout)
+      // Resolve container by name with timeout protection.
       const container = this.docker.getContainer(target);
       
       const inspectPromise = container.inspect();
@@ -33,7 +33,7 @@ export class DockerChecker implements Checker {
       const status = state.Status; // running, exited, paused, etc.
       const health = state.Health?.Status; // healthy, unhealthy, starting, none
 
-      // Logique de décision
+      // Decision rules.
       if (status !== 'running') {
         return {
           status: 'DOWN',
@@ -42,13 +42,13 @@ export class DockerChecker implements Checker {
         };
       }
 
-      // Si le container a un healthcheck Docker défini, on l'utilise
+      // If container healthcheck exists, use it as source of truth.
       if (health) {
         if (health === 'healthy') {
           return { status: 'UP', latencyMs };
         }
         if (health === 'starting') {
-          // Container en démarrage : on considère DOWN temporairement
+          // Container is starting: considered temporarily DOWN.
           return {
             status: 'DOWN',
             latencyMs,
@@ -62,17 +62,17 @@ export class DockerChecker implements Checker {
         };
       }
 
-      // Pas de healthcheck défini, mais le container tourne
+      // No healthcheck defined, but container is running.
       return { status: 'UP', latencyMs };
 
     } catch (error) {
       const latencyMs = Math.round(performance.now() - startTime);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
-      // Détecter le timeout
+      // Timeout detection.
       const isTimeout = errorMessage.includes('timeout');
 
-      // Détecter "container not found"
+      // "Container not found" detection.
       const isNotFound = errorMessage.includes('No such container') ||
                          errorMessage.includes('not found');
 
