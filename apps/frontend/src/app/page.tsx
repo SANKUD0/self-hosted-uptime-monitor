@@ -5,11 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { TableFetchError } from "@/components/ui/fetch-error/table-fetch-error";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useRealtimeSocket } from "@/hooks/useRealTimeSocket";
 import { api, incidentsResponse, servicesMonitoringResponse } from "@/lib/api";
+import { REALTIME_EVENTS } from "@/lib/realtime-events";
 import { Activity, AlertTriangle, ArrowDownCircle, ArrowUpCircle, ExternalLink, RefreshCw, Server } from "lucide-react";
 import { useEffect, useState } from "react";
-
-const DASHBOARD_REFRESH_INTERVAL_MS = 30000;
 
 export default function Home() {
   const [count, setCount] = useState<number | null>(null);
@@ -91,18 +91,39 @@ export default function Home() {
     // Load all dashboard data through HTTP first; this function can later be replaced by WebSocket event handlers.
     void refreshDashboardHttpData();
 
-    // TODO: Replace polling with a WebSocket stream when backend events are available.
-    // TODO: Expose a user setting to customize refresh frequency.
+    // const interval = setInterval(() => {
+    //   void refreshDashboardHttpData();
+    // }, DASHBOARD_REFRESH_INTERVAL_MS);
 
-    const interval = setInterval(() => {
-      void refreshDashboardHttpData();
-    }, DASHBOARD_REFRESH_INTERVAL_MS);
-
-    return () => {
-      // Cleanup interval on component unmount.
-      clearInterval(interval);
-    };
+    // return () => {
+    //   // Cleanup interval on component unmount.
+    //   clearInterval(interval);
+    // };
   }, []);
+
+  useRealtimeSocket({
+    [REALTIME_EVENTS.MONITORING_UPDATED]: (payload) => {
+      const data = payload as servicesMonitoringResponse;
+      setMonitoringData(prev =>
+        prev.map(entry => entry.id === data.id ? data : entry)
+      );
+    },
+    [REALTIME_EVENTS.STATS_UPDATED]: (payload) => {
+      const data = payload as { totalServices: number; upServices: number; downServices: number; openIncidents: number };
+      setCount(data.totalServices);
+      setUp(data.upServices);
+      setDown(data.downServices);
+      setIncidents(data.openIncidents);
+    },
+    [REALTIME_EVENTS.INCIDENTS_UPDATED]: (payload) => {
+      const data = payload as incidentsResponse;
+      setIncidentsData(prev => {
+        const exists = prev.find(e => e.id === data.id);
+        if (exists) return prev.map(e => e.id === data.id ? data : e);
+        return [data, ...prev];
+      });
+    },
+  });
 
 
 
@@ -184,7 +205,7 @@ export default function Home() {
         <Card>
           <CardHeader>
             <CardTitle>Service Health Split</CardTitle>
-            <CardDescription>Live UP vs DOWN ratio from HTTP polling</CardDescription>
+            <CardDescription>Live UP vs DOWN ratio</CardDescription>
           </CardHeader>
           <CardContent>
             <ServiceHealthDonut upCount={upCount} downCount={downCount} />
@@ -197,7 +218,7 @@ export default function Home() {
         <Card>
           <CardHeader>
             <CardTitle>Services Monitoring</CardTitle>
-            <CardDescription>Latest status for all services — refreshed every 30s</CardDescription>
+            <CardDescription>Latest status for all services — live via WebSocket</CardDescription>
           </CardHeader>
           <CardContent>
             <Table>
@@ -279,7 +300,7 @@ export default function Home() {
         <Card>
           <CardHeader>
             <CardTitle>Recent Incidents</CardTitle>
-            <CardDescription>Latest incidents — refreshed every 30s</CardDescription>
+            <CardDescription>Latest incidents — live via WebSocket</CardDescription>
           </CardHeader>
           <CardContent>
             <Table>
