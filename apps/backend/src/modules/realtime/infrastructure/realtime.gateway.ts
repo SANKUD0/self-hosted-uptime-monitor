@@ -16,7 +16,7 @@ import { RealtimeEventMap, RealtimeEventName } from '../domain/realtime-events';
  */
 //TODO: Make compatible with docker and load balancing
 @WebSocketGateway({
-  cors: { origin: ['http://localhost:3000', 'http://localhost:3003'], credentials: true },
+  cors: { origin: true, credentials: true },
   namespace: '/realtime',
 })
 export class RealtimeGateway
