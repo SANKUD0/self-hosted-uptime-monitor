@@ -9,7 +9,7 @@ services:
     env_file:
       - ./apps/frontend/.env
     environment:
-      - MONOLITH_API_URL=http://localhost:3004
+      - MONOLITH_API_URL=http://opennotify-backend:3001
     networks:
       - opennotify-net
 
