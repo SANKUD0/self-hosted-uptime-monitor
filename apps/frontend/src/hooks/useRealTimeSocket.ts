@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { io, Socket } from "socket.io-client";
 
-const SOCKET_URL = process.env.MONOLITH_API_URL! || 'http://localhost:3004';
+const SOCKET_URL = process.env.NEXT_PUBLIC_API_URL! || 'http://localhost:3004';
 /**
  * A custom React hook that establishes a WebSocket connection to the specified socket URL and listens for events. 
  * It takes a record of event names and their corresponding handler functions, 
