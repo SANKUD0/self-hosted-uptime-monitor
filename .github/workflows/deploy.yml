@@ -3,7 +3,7 @@ name: Deploy to k15-server
 on:
   push:
     branches:
-      - main
+      - master
 
 jobs:
   deploy:
