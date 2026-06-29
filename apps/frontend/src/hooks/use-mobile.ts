@@ -2,12 +2,6 @@ import * as React from "react"
 
 const MOBILE_BREAKPOINT = 768
 
-/**
- * Tracks whether the current viewport should be treated as mobile.
- *
- * Uses a media query listener to stay in sync with viewport changes and
- * returns a strict boolean to keep consumer code simple.
- */
 export function useIsMobile() {
   const [isMobile, setIsMobile] = React.useState<boolean | undefined>(undefined)
 
