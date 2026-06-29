@@ -152,3 +152,12 @@
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 }
+
+.section-highlight {
+    animation: highlight-pulse 2s ease-out forwards;
+}
+
+@keyframes highlight-pulse {
+    0%   { box-shadow: 0 0 0 4px #3b82f6; }
+    100% { box-shadow: 0 0 0 0px transparent; }
+}
