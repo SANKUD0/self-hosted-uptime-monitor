@@ -13,6 +13,8 @@ import {
     SidebarMenuSub,
     SidebarMenuSubButton,
     SidebarMenuSubItem,
+    SidebarRail,
+    SidebarTrigger,
     useSidebar,
 } from "@/components/ui/sidebar"
 import { ChevronRight, LayoutGrid, Mail, Settings } from "lucide-react"
@@ -26,8 +28,10 @@ import { Separator } from "./ui/separator";
 
 export function AppSidebar() {
     return (
-        <Sidebar>
-            <SidebarHeader />
+        <Sidebar collapsible="icon">
+            <SidebarHeader>
+                <SidebarTrigger/>
+            </SidebarHeader>
             <SidebarContent>
                 <SidebarGroup>
                     <SidebarGroupLabel>Navigation</SidebarGroupLabel>
