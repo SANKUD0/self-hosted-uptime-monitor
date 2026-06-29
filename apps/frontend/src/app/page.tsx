@@ -173,7 +173,6 @@ export default function Home() {
     <div className="min-h-screen bg-muted/30">
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-10">
 
-        {/* Header */}
         <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
             <span className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
@@ -191,14 +190,12 @@ export default function Home() {
             <Badge variant="outline" className="gap-2 px-3 py-1.5 bg-card">
               <span className="relative flex size-2">
                 <span
-                  className={`absolute inline-flex h-full w-full rounded-full opacity-75 ${
-                    hasGlobalError ? "bg-red-500" : "animate-ping bg-emerald-500"
-                  }`}
+                  className={`absolute inline-flex h-full w-full rounded-full opacity-75 ${hasGlobalError ? "bg-red-500" : "animate-ping bg-emerald-500"
+                    }`}
                 />
                 <span
-                  className={`relative inline-flex size-2 rounded-full ${
-                    hasGlobalError ? "bg-red-500" : "bg-emerald-500"
-                  }`}
+                  className={`relative inline-flex size-2 rounded-full ${hasGlobalError ? "bg-red-500" : "bg-emerald-500"
+                    }`}
                 />
               </span>
               <span className="text-xs font-normal text-muted-foreground">
@@ -223,7 +220,6 @@ export default function Home() {
           </div>
         </header>
 
-        {/* Key metrics */}
         <div className="grid grid-cols-2 gap-4 mb-6 lg:grid-cols-5">
           <StatCard title="Registered Services" value={count} error={errorCount} icon={Server} accent="default" />
           <StatCard title="Services UP" value={up} error={errorUp} icon={ArrowUpCircle} accent="success" />
@@ -241,7 +237,6 @@ export default function Home() {
           </Card>
         </div>
 
-        {/* Charts row 1 — Latency + Health Split */}
         <div className="grid grid-cols-1 gap-6 mb-6 xl:grid-cols-3">
           <Card className="xl:col-span-2">
             <CardHeader>
@@ -264,7 +259,6 @@ export default function Home() {
           </Card>
         </div>
 
-        {/* Charts row 2 — Incidents Over Time + Uptime */}
         <div className="grid grid-cols-1 gap-6 mb-6 lg:grid-cols-2">
           <Card>
             <CardHeader>
@@ -278,16 +272,15 @@ export default function Home() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Global Uptime</CardTitle>
-              <CardDescription>Percentage of services currently UP</CardDescription>
+              <CardTitle>Uptime (30 days)</CardTitle>
+              <CardDescription>Historical availability across all services</CardDescription>
             </CardHeader>
             <CardContent>
-              <UptimeRadialChart upCount={upCount} total={upCount + downCount + timeoutCount} />
+              <UptimeRadialChart incidents={incidentsData} totalServices={upCount + downCount + timeoutCount} />
             </CardContent>
           </Card>
         </div>
 
-        {/* Services Monitoring */}
         <Card className="mb-6">
           <CardHeader>
             <CardTitle>Services Monitoring</CardTitle>
@@ -381,9 +374,8 @@ export default function Home() {
                       <TableCell>
                         {entry.latencyMs !== null ? (
                           <span
-                            className={`font-mono text-xs ${
-                              entry.latencyMs > 1000 ? "text-amber-600 font-semibold" : "text-muted-foreground"
-                            }`}
+                            className={`font-mono text-xs ${entry.latencyMs > 1000 ? "text-amber-600 font-semibold" : "text-muted-foreground"
+                              }`}
                           >
                             {entry.latencyMs} ms
                           </span>
@@ -396,11 +388,10 @@ export default function Home() {
                         {entry.statusCode !== null ? (
                           <Badge
                             variant="outline"
-                            className={`font-mono text-xs ${
-                              entry.statusCode >= 200 && entry.statusCode < 300
-                                ? "bg-emerald-500/10 text-emerald-700 border-emerald-500/30 dark:text-emerald-400"
-                                : "bg-red-500/10 text-red-700 border-red-500/30 dark:text-red-400"
-                            }`}
+                            className={`font-mono text-xs ${entry.statusCode >= 200 && entry.statusCode < 300
+                              ? "bg-emerald-500/10 text-emerald-700 border-emerald-500/30 dark:text-emerald-400"
+                              : "bg-red-500/10 text-red-700 border-red-500/30 dark:text-red-400"
+                              }`}
                           >
                             {entry.statusCode}
                           </Badge>
@@ -431,7 +422,6 @@ export default function Home() {
           </CardContent>
         </Card>
 
-        {/* Recent Incidents */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
@@ -468,18 +458,16 @@ export default function Home() {
                   return (
                     <div
                       key={entry.id}
-                      className={`flex items-start gap-3 rounded-lg border p-3 transition-colors hover:bg-muted/30 ${
-                        isOpen ? "border-red-500/30 bg-red-500/5" : "border-border"
-                      }`}
+                      className={`flex items-start gap-3 rounded-lg border p-3 transition-colors hover:bg-muted/30 ${isOpen ? "border-red-500/30 bg-red-500/5" : "border-border"
+                        }`}
                     >
                       <span className="relative mt-1.5 flex size-2 shrink-0">
                         {isOpen && (
                           <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500 opacity-75" />
                         )}
                         <span
-                          className={`relative inline-flex size-2 rounded-full ${
-                            isOpen ? "bg-red-500" : "bg-emerald-500"
-                          }`}
+                          className={`relative inline-flex size-2 rounded-full ${isOpen ? "bg-red-500" : "bg-emerald-500"
+                            }`}
                         />
                       </span>
 
@@ -523,10 +511,6 @@ export default function Home() {
     </div>
   );
 }
-
-/* ------------------------------------------------------------------ */
-/* Helpers                                                             */
-/* ------------------------------------------------------------------ */
 
 function StatusBadge({ status }: { status: string }) {
   const config: Record<string, { style: string; dot: string; pulse: boolean }> = {
@@ -586,10 +570,6 @@ function EmptyChartState({ message }: { message: string }) {
     </div>
   );
 }
-
-/* ------------------------------------------------------------------ */
-/* Charts                                                              */
-/* ------------------------------------------------------------------ */
 
 function LatencyBarChart({
   items,
@@ -750,10 +730,26 @@ function IncidentsOverTimeChart({ incidents }: { incidents: incidentsResponse[] 
   );
 }
 
-function UptimeRadialChart({ upCount, total }: { upCount: number; total: number }) {
-  if (total === 0) return <EmptyChartState message="No data yet." />;
+function UptimeRadialChart({ incidents, totalServices }: { incidents: incidentsResponse[]; totalServices: number }) {
+  if (totalServices === 0) return <EmptyChartState message="No data yet." />;
 
-  const percentage = Math.round((upCount / total) * 100);
+  // Calcul the last 30 days uptime percentage across all services
+  const PERIOD_DAYS = 30;
+  const now = Date.now();
+  const periodStart = now - PERIOD_DAYS * 24 * 60 * 60 * 1000;
+  const totalPeriodMs = PERIOD_DAYS * 24 * 60 * 60 * 1000 * totalServices; // sum of the time of all services
+
+  // Sum of incident durations (capped at the start of the period)
+  const totalDowntimeMs = incidents.reduce((sum, inc) => {
+    const startedAt = Math.max(new Date(inc.startedAt).getTime(), periodStart);
+    const resolvedAt = inc.resolvedAt ? new Date(inc.resolvedAt).getTime() : now;
+    if (resolvedAt < periodStart) return sum;
+    return sum + Math.max(0, resolvedAt - startedAt);
+  }, 0);
+
+  const uptimeRatio = Math.max(0, (totalPeriodMs - totalDowntimeMs) / totalPeriodMs);
+  const percentage = Math.round(uptimeRatio * 10000) / 100; // 99.95 for example
+
   const chartData = [{ name: "uptime", value: percentage, fill: "var(--color-uptime)" }];
 
   const chartConfig = {
@@ -787,7 +783,7 @@ function UptimeRadialChart({ upCount, total }: { upCount: number; total: number 
                       {percentage}%
                     </tspan>
                     <tspan x={viewBox.cx} y={(viewBox.cy || 0) + 20} className="fill-muted-foreground text-xs">
-                      Uptime
+                      Last 30 days
                     </tspan>
                   </text>
                 );
