@@ -1,3 +1,4 @@
+import { ContactType } from "@prisma/client";
 import { Type } from "class-transformer";
 import { IsBoolean, IsIn, IsInt, isInt, IsString, ValidateNested } from "class-validator";
 
@@ -7,8 +8,8 @@ import { IsBoolean, IsIn, IsInt, isInt, IsString, ValidateNested } from "class-v
  * It ensures that all required fields are provided and have the correct types.
  */
 export class CreateSmtpChannelDto {
-    @IsIn(['smtp'])
-    type!: 'smtp';
+    @IsIn([ContactType.EMAIL])
+    type!: 'EMAIL'; // Must be 'EMAIL' to match the ContactType enum
 
     @IsString()
     smtpHost!: string;
@@ -34,8 +35,8 @@ export class CreateSmtpChannelDto {
  * It ensures that all required fields are provided and have the correct types.
  */
 export class CreateDiscordChannelDto {
-    @IsIn(['discord'])
-    type!: 'discord';
+    @IsIn([ContactType.DISCORD])
+    type!: 'DISCORD'; // Must be 'DISCORD' to match the ContactType enum
 
     @IsString()
     webhookUrl!: string;
