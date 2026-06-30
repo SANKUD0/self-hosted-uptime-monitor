@@ -72,6 +72,24 @@ export type MonotoringChecksResponse = {
     timestamp: string;
 }
 
+/** Response payload for Discord webhook settings. */
+export type DiscordWebhookSettingsResponse = {
+    id: string;
+    webhookUrl: string;
+    enabled: boolean;
+}
+
+/** Response payload for SMTP settings. */
+export type SMTPSettingsResponse = {
+    id: string;
+    SMTPHost: string;
+    SMTPPort: number;
+    SMTPUsernameFrom: string;
+    SMTPPassword: string;
+    recipientEmail: string;
+    enabled: boolean;
+}
+
 
 
 /**
@@ -189,5 +207,8 @@ export const api = {
             if (!res.ok) throw new Error(`HTTP ${res.status} `);
             return res.json() as Promise<MonotoringChecksResponse[]>
         }),
+    },
+    notifications: {
+
     }
 }
