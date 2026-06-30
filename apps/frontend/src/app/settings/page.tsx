@@ -8,11 +8,15 @@ import { Separator } from "@/components/ui/separator";
 import { Mail } from "lucide-react";
 import { Icon } from "@iconify/react";
 import { useHighlightSection } from "@/hooks/use-highlight-section";
+import { useState } from "react";
+import { DiscordWebhookSettingsResponse, SMTPSettingsResponse } from "@/lib/api";
 
 
 export default function SettingsPage() {
     useHighlightSection();
-    
+    const [smtp, setSmtp] = useState<SMTPSettingsResponse>(null as any);
+    const [discordWebhook, setDiscordWebhook] = useState<DiscordWebhookSettingsResponse>(null as any);
+
     return (
         <div className="max-w-2xl mx-auto px-6 py-8 space-y-6">
 
@@ -41,24 +45,36 @@ export default function SettingsPage() {
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1.5">
                             <Label htmlFor="smtp-host">SMTP Host</Label>
-                            <Input id="smtp-host" placeholder="smtp.gmail.com" autoComplete="off" />
+                            <Input id="smtp-host" placeholder="smtp.gmail.com" 
+                            value={smtp?.SMTPHost ?? ""} 
+                            onChange={(e) => setSmtp({...smtp, SMTPHost: e.target.value})}
+                            autoComplete="off" />
                         </div>
                         <div className="space-y-1.5">
                             <Label htmlFor="port">Port</Label>
-                            <Input id="port" type="number" placeholder="587" autoComplete="off" />
+                            <Input id="port" type="number" placeholder="587" 
+                            value={smtp?.SMTPPort ?? ""} 
+                            onChange={(e) => setSmtp({...smtp, SMTPPort: Number(e.target.value)})}
+                            autoComplete="off" />
                         </div>
                     </div>
 
                     <div className="space-y-1.5">
                         <Label htmlFor="username">Username (From)</Label>
-                        <Input id="username" type="text" placeholder="you@gmail.com" autoComplete="off" />
+                        <Input id="username" type="text" placeholder="you@gmail.com" 
+                        value={smtp?.SMTPUsernameFrom ?? ""} 
+                        onChange={(e) => setSmtp({...smtp, SMTPUsernameFrom: e.target.value})}
+                        autoComplete="off" />
                     </div>
 
                     <div className="space-y-1.5">
                         <Label htmlFor="password">Password</Label>
-                        <Input id="password" type="password" placeholder="App password" autoComplete="off" />
+                        <Input id="password" type="password" placeholder="App password" 
+                        value={smtp?.SMTPPassword ?? ""} 
+                        onChange={(e) => setSmtp({...smtp, SMTPPassword: e.target.value})}
+                        autoComplete="off" />
                         <p className="text-xs text-muted-foreground">
-                            Gmail requires an App Password — not your regular password.
+                            Gmail requires an App Password, not your regular password.
                         </p>
                     </div>
 
@@ -67,7 +83,10 @@ export default function SettingsPage() {
                     <div className="space-y-1.5">
                         <Label htmlFor="recipient">Recipient's Email</Label>
                         <div className="flex gap-2">
-                            <Input id="recipient" type="email" placeholder="alerts@domain.com" autoComplete="off" />
+                            <Input id="recipient" type="email" placeholder="alerts@domain.com" 
+                            value={smtp?.recipientEmail ?? ""} 
+                            onChange={(e) => setSmtp({...smtp, recipientEmail: e.target.value})}
+                            autoComplete="off" />
                             <Button variant="outline">Send test</Button>
                         </div>
                     </div>
@@ -76,12 +95,13 @@ export default function SettingsPage() {
 
                     <div className="flex items-center justify-between">
                         <div className="space-y-0.5">
-                            <Label htmlFor="enable-smtp">Enable SMTP</Label>
+                            <Label htmlFor="enable-smtp" >Enable SMTP</Label>
                             <p className="text-xs text-muted-foreground">
                                 Send an email on every status change.
                             </p>
                         </div>
-                        <Switch id="enable-smtp" />
+                        <Switch id="enable-smtp" checked={smtp?.enabled} 
+                        onCheckedChange={(checked: boolean) => setSmtp({...smtp, enabled: checked})} />
                     </div>
                 </CardContent>
             </Card>
@@ -101,7 +121,10 @@ export default function SettingsPage() {
                     <div className="space-y-1.5">
                         <Label htmlFor="discord-webhook">Webhook URL</Label>
                         <div className="flex gap-2">
-                            <Input id="discord-webhook" placeholder="https://discord.com/api/webhooks/..." autoComplete="off" />
+                            <Input id="discord-webhook" placeholder="https://discord.com/api/webhooks/..." 
+                            value={discordWebhook?.webhookUrl ?? ""} 
+                            onChange={(e) => setDiscordWebhook({...discordWebhook, webhookUrl: e.target.value})}
+                            autoComplete="off" />
                             <Button variant="outline">Send test</Button>
                         </div>
                     </div>
@@ -115,7 +138,8 @@ export default function SettingsPage() {
                                 Post a message in your channel on every incident.
                             </p>
                         </div>
-                        <Switch id="enable-discord" />
+                        <Switch id="enable-discord" checked={discordWebhook?.enabled} 
+                        onCheckedChange={(checked: boolean) => setDiscordWebhook({...discordWebhook, enabled: checked})} />
                     </div>
                 </CardContent>
             </Card>
