@@ -1,3 +1,15 @@
+## ⚠️ Work in progress
+
+This version requires manual configuration and is not yet recommended for production use.
+A simpler setup with guided configuration is planned for the next release.
+
+### Current limitations
+- Manual `.env` configuration required
+- Database migration must be run manually
+- Docker knowledge required for deployment
+
+  
+
 # OpenNotify
 
 OpenNotify is a self-hosted service monitoring platform.
