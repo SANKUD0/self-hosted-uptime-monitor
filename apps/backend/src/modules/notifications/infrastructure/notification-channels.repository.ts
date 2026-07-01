@@ -13,11 +13,11 @@ export class NotificationChannelsRepository {
                 data: {
                     type: dto.data.type,
                     config: JSON.parse(JSON.stringify(dto.data)),
-                    createdAt: new Date(),
                 }
             })
         } catch (error) {
             console.error("Error creating notification channel configuration:", error);
+            throw error;
         }
     }
 
@@ -34,6 +34,19 @@ export class NotificationChannelsRepository {
 
         } catch (error) {
             console.error("Error updating notification channel configuration:", error);
+            throw error;
+        }
+    }
+
+    async remove(id: string) {
+        try {
+            if (!id) throw new Error("ID is required for removing a notification channel configuration.");
+            return await this.prisma.notificationChannelConfig.delete({
+                where: {id}
+            });
+        } catch (error) {
+            console.error("Error removing notification channel configuration:", error);
+            throw error;
         }
     }
 }
