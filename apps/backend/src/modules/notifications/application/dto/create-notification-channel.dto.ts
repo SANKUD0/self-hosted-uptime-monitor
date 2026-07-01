@@ -57,8 +57,8 @@ export class CreateNotificationChannelDto {
         discriminator: {
             property: 'type',
             subTypes: [
-                { value: CreateSmtpChannelDto, name: 'smtp' },
-                { value: CreateDiscordChannelDto, name: 'discord' },
+                { value: CreateSmtpChannelDto, name: 'EMAIL' },
+                { value: CreateDiscordChannelDto, name: 'DISCORD' },
             ],
         },
     })
