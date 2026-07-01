@@ -95,7 +95,7 @@ function SettingsMenu() {
                             <Link href="/settings">General</Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem asChild>
-                            <Link href="/settings#smtp">SMTP</Link>
+                            <Link href="/settings#email">Email</Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem asChild>
                             <Link href="/settings#discord">Discord</Link>
@@ -120,9 +120,9 @@ function SettingsMenu() {
                     <SidebarMenuSub>
                         <SidebarMenuSubItem>
                             <SidebarMenuSubButton asChild>
-                                <Link href="/settings#smtp">
+                                <Link href="/settings#email">
                                     <Mail size={16} />
-                                    <span>SMTP</span>
+                                    <span>Email</span>
                                 </Link>
                             </SidebarMenuSubButton>
                         </SidebarMenuSubItem>
