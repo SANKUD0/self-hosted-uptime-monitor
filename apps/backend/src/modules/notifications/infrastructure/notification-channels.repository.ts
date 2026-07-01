@@ -42,10 +42,22 @@ export class NotificationChannelsRepository {
         try {
             if (!id) throw new Error("ID is required for removing a notification channel configuration.");
             return await this.prisma.notificationChannelConfig.delete({
-                where: {id}
+                where: { id }
             });
         } catch (error) {
             console.error("Error removing notification channel configuration:", error);
+            throw error;
+        }
+    }
+
+    async get(id: string) {
+        try {
+            if (!id) throw new Error("ID is required for retrieving a notification channel configuration.");
+            return await this.prisma.notificationChannelConfig.findUnique({
+                where: { id }
+            });
+        } catch (error) {
+            console.error("Error retrieving notification channel configuration:", error);
             throw error;
         }
     }
