@@ -74,21 +74,25 @@ export type MonotoringChecksResponse = {
 
 /** Response payload for Discord webhook settings. */
 export type DiscordWebhookSettingsResponse = {
-    id?: string;
     webhookUrl: string;
     enabled: boolean;
 }
 
 /** Response payload for SMTP settings. */
 export type SMTPSettingsResponse = {
-    id?: string;
-    SMTPHost: string;
-    SMTPPort: number;
-    SMTPUsernameFrom: string;
-    SMTPPassword: string;
+    smtpHost: string;
+    smtpPort: number;
+    smtpUsernameFrom: string;
+    smtpPassword: string;
     recipientEmail: string;
     enabled: boolean;
 }
+
+/** Union type for notification channel settings. */
+export type TypeChannelsAvailable =
+    "DISCORD" |
+    "EMAIL";
+
 
 
 
@@ -217,22 +221,25 @@ export const api = {
             if (!res.ok) throw new Error(`HTTP ${res.status} `);
             return res.json() as Promise<DiscordWebhookSettingsResponse | SMTPSettingsResponse>
         }),
-        createChannels: ({ type, channels }: { type: string, channels: DiscordWebhookSettingsResponse | SMTPSettingsResponse }) => fetch(`${BASE_URL}/notifications`, {
+        createChannels: <T extends { id?: string, enabled?: boolean }>({ type, channels }: { type: TypeChannelsAvailable, channels: T }) => fetch(`${BASE_URL}/notifications`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify({data: { type, ...channels }}),
-        }).then(res => {
-            if (!res.ok) throw new Error(`HTTP ${res.status} `);
+            body: JSON.stringify({ data: { type, ...channels } }),
+        }).then(async res => {
+            if (!res.ok) {
+                const body = await res.text();
+                throw new Error(`HTTP ${res.status} - ${body}`);
+            }
             return res.json();
         }),
-        updateChannels: ({ id, channels }: { id: string, channels: DiscordWebhookSettingsResponse | SMTPSettingsResponse }) => fetch(`${BASE_URL}/notifications/${id}`, {
+        updateChannels: <T extends { id: string, enabled?: boolean }>({ id, channels }: { id: string, channels: Omit<T, "id"> }) => fetch(`${BASE_URL}/notifications/${id}`, {
             method: "PATCH",
             headers: {
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify({data: {...channels}}),
+            body: JSON.stringify({ data: { ...channels } }),
         }).then(res => {
             if (!res.ok) throw new Error(`HTTP ${res.status} `);
             return res.json();

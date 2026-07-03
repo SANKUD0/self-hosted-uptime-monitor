@@ -5,17 +5,31 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
-import { Mail } from "lucide-react";
+import { Mail, Save, Trash2 } from "lucide-react";
 import { Icon } from "@iconify/react";
 import { useHighlightSection } from "@/hooks/use-highlight-section";
 import { useState } from "react";
-import { DiscordWebhookSettingsResponse, SMTPSettingsResponse } from "@/lib/api";
+import { api, DiscordWebhookSettingsResponse, SMTPSettingsResponse, TypeChannelsAvailable } from "@/lib/api";
+import { channel } from "diagnostics_channel";
 
 
 export default function SettingsPage() {
     useHighlightSection();
     const [smtp, setSmtp] = useState<SMTPSettingsResponse>(null as any);
     const [discordWebhook, setDiscordWebhook] = useState<DiscordWebhookSettingsResponse>(null as any);
+    const [error, setError] = useState<string | null>(null);
+
+
+
+    // Delete notification channels settings from the backend API
+    const handleDeleteNotificationChannels = async (id: string) => {
+        try {
+            await api.notifications.deleteChannels({ id });
+        } catch (error) {
+            setError("Failed to delete notification channels. Please try again.");
+            return;
+        }
+    }
 
     return (
         <div className="max-w-2xl mx-auto px-6 py-8 space-y-6">
@@ -32,7 +46,10 @@ export default function SettingsPage() {
 
             {/* SMTP */}
             <Card id="email" className="transition-shadow duration-300">
-                <CardHeader>
+                <CardHeader className="relative">
+                    <Trash2 size={18}
+                        className="absolute top-0 right-5 text-muted-foreground hover:text-destructive cursor-pointer"
+                        onClick={() => handleDeleteNotificationChannels(smtp?.id ?? "")} />
                     <div className="flex items-center gap-2">
                         <Mail size={18} />
                         <CardTitle className="text-base">SMTP Settings</CardTitle>
@@ -46,15 +63,15 @@ export default function SettingsPage() {
                         <div className="space-y-1.5">
                             <Label htmlFor="smtp-host">SMTP Host</Label>
                             <Input id="smtp-host" placeholder="smtp.gmail.com"
-                                value={smtp?.SMTPHost ?? ""}
-                                onChange={(e) => setSmtp({ ...smtp, SMTPHost: e.target.value })}
+                                value={smtp?.smtpHost ?? ""}
+                                onChange={(e) => setSmtp({ ...smtp, smtpHost: e.target.value })}
                                 autoComplete="off" />
                         </div>
                         <div className="space-y-1.5">
                             <Label htmlFor="port">Port</Label>
                             <Input id="port" type="number" placeholder="587"
-                                value={smtp?.SMTPPort ?? ""}
-                                onChange={(e) => setSmtp({ ...smtp, SMTPPort: Number(e.target.value) })}
+                                value={smtp?.smtpPort ?? ""}
+                                onChange={(e) => setSmtp({ ...smtp, smtpPort: Number(e.target.value) })}
                                 autoComplete="off" />
                         </div>
                     </div>
@@ -62,16 +79,16 @@ export default function SettingsPage() {
                     <div className="space-y-1.5">
                         <Label htmlFor="username">Username (From)</Label>
                         <Input id="username" type="text" placeholder="you@gmail.com"
-                            value={smtp?.SMTPUsernameFrom ?? ""}
-                            onChange={(e) => setSmtp({ ...smtp, SMTPUsernameFrom: e.target.value })}
+                            value={smtp?.smtpUsernameFrom ?? ""}
+                            onChange={(e) => setSmtp({ ...smtp, smtpUsernameFrom: e.target.value })}
                             autoComplete="off" />
                     </div>
 
                     <div className="space-y-1.5">
                         <Label htmlFor="password">Password</Label>
                         <Input id="password" type="password" placeholder="App password"
-                            value={smtp?.SMTPPassword ?? ""}
-                            onChange={(e) => setSmtp({ ...smtp, SMTPPassword: e.target.value })}
+                            value={smtp?.smtpPassword ?? ""}
+                            onChange={(e) => setSmtp({ ...smtp, smtpPassword: e.target.value })}
                             autoComplete="off" />
                         <p className="text-xs text-muted-foreground">
                             Gmail requires an App Password, not your regular password.
@@ -100,18 +117,19 @@ export default function SettingsPage() {
                                 Send an email on every status change.
                             </p>
                         </div>
-                        <Switch id="enable-smtp" checked={smtp?.enabled}
+                        <Switch id="enable-smtp" checked={smtp?.enabled ?? false}
                             onCheckedChange={(checked: boolean) => setSmtp({ ...smtp, enabled: checked })} />
                     </div>
                     <div className="flex justify-end">
-                        <Button>Save changes</Button>
+                        <SaveButtonNottifications id={smtp?.id} type="EMAIL" value={smtp} onError={(msg) => setError(msg)} />
                     </div>
                 </CardContent>
             </Card>
 
             {/* Discord */}
             <Card id="discord" className="transition-shadow duration-300">
-                <CardHeader>
+                <CardHeader className="relative">
+                    <Trash2 size={18} className="absolute top-0 right-5 text-muted-foreground hover:text-destructive cursor-pointer" />
                     <div className="flex items-center gap-2">
                         <Icon icon="mdi:discord" height="18" />
                         <CardTitle className="text-base">Discord Webhook</CardTitle>
@@ -141,7 +159,7 @@ export default function SettingsPage() {
                                 Post a message in your channel on every incident.
                             </p>
                         </div>
-                        <Switch id="enable-discord" checked={discordWebhook?.enabled}
+                        <Switch id="enable-discord" checked={discordWebhook?.enabled ?? false}
                             onCheckedChange={(checked: boolean) => setDiscordWebhook({ ...discordWebhook, enabled: checked })} />
                     </div>
                     <div className="flex justify-end">
@@ -155,4 +173,32 @@ export default function SettingsPage() {
     );
 }
 
+// To use this compoenent, the notification channel need to have an id and enabled property.
+function SaveButtonNottifications<T extends { enabled?: boolean }>({ id, type, value, onError, }:
+    {
+        id?: string,
+        type: TypeChannelsAvailable,
+        value: T,
+        onError?: (msg: string) => void
+    }) {
+    
+    const channelLabels: Record<TypeChannelsAvailable, string> = {
+        DISCORD: "Discord",
+        EMAIL: "Email",
+    }
 
+    const handleCreateOrUpdateNotificationChannels = async (id: string | undefined, type: TypeChannelsAvailable, channels: T) => {
+        try {
+            id ? await api.notifications.updateChannels({ id, channels }) :
+                await api.notifications.createChannels({ type, channels });
+        } catch (error) {
+            onError?.(`Failed to save ${channelLabels[type]} notification channels. Please try again.`);
+        }
+    }
+
+    return (
+        <Button onClick={() => {
+            handleCreateOrUpdateNotificationChannels(id, type, value);
+        }}>Save changes</Button>
+    );
+} 

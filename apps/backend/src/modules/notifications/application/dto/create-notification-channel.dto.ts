@@ -14,14 +14,14 @@ export class CreateSmtpChannelDto {
     @IsString()
     smtpHost!: string;
 
-    @IsInt()
-    SMTPPort!: number;
+    @IsString()
+    smtpPort!: string;
 
     @IsString()
-    SMTPUsernameFrom!: string;
+    smtpUsernameFrom!: string;
 
     @IsString()
-    SMTPPassword!: string;
+    smtpPassword!: string;
 
     @IsString()
     recipientEmail!: string;
