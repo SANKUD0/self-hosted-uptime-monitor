@@ -66,9 +66,7 @@ export default function SettingsPage() {
             {/* SMTP */}
             <Card id="email" className="transition-shadow duration-300">
                 <CardHeader className="relative">
-                    <Trash2 size={18}
-                        className="absolute top-0 right-5 text-muted-foreground hover:text-destructive cursor-pointer"
-                        onClick={() => handleDeleteNotificationChannels(smtp?.id ?? "")} />
+                    <DeleteNotificationChannel id={smtp?.id ?? ""} onError={setError} />
                     <div className="flex items-center gap-2">
                         <Mail size={18} />
                         <CardTitle className="text-base">SMTP Settings</CardTitle>
@@ -220,4 +218,21 @@ function SaveButtonNottifications<T extends { enabled?: boolean }>({ id, type, v
             handleCreateOrUpdateNotificationChannels(id, type, value);
         }}>Save changes</Button>
     );
-} 
+}
+
+function DeleteNotificationChannel({ id, onError }: { id: string, onError?: (msg: string) => void }) {
+
+    return (
+        <Trash2
+            size={18}
+            className="absolute top-0 right-5 text-muted-foreground hover:text-destructive cursor-pointer"
+            onClick={() => {
+                api.notifications.deleteChannels({ id }).then(() => {
+                    //callback to reflect the deletion in the UI.
+                    window.location.reload();
+                }).catch(() => {
+                    onError?.("Failed to delete notification channels. Please try again.");
+                });
+            }} />
+    );
+}
