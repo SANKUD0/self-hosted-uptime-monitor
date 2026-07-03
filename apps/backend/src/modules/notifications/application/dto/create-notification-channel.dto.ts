@@ -14,8 +14,8 @@ export class CreateSmtpChannelDto {
     @IsString()
     smtpHost!: string;
 
-    @IsString()
-    smtpPort!: string;
+    @IsInt()
+    smtpPort!: number;
 
     @IsString()
     smtpUsernameFrom!: string;
@@ -61,6 +61,7 @@ export class CreateNotificationChannelDto {
                 { value: CreateDiscordChannelDto, name: 'DISCORD' },
             ],
         },
+        keepDiscriminatorProperty: true, // Keep the 'type' property in the transformed object
     })
     @ValidateNested()
     data!:
