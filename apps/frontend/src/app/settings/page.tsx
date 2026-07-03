@@ -5,21 +5,40 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
-import { Mail, Save, Trash2 } from "lucide-react";
+import { Mail, Trash2 } from "lucide-react";
 import { Icon } from "@iconify/react";
 import { useHighlightSection } from "@/hooks/use-highlight-section";
-import { useState } from "react";
-import { api, DiscordWebhookSettingsResponse, SMTPSettingsResponse, TypeChannelsAvailable } from "@/lib/api";
-import { channel } from "diagnostics_channel";
+import { useEffect, useState } from "react";
+import { api, DiscordFormState, EmailFormState, TypeChannelsAvailable } from "@/lib/api";
 
 
 export default function SettingsPage() {
     useHighlightSection();
-    const [smtp, setSmtp] = useState<SMTPSettingsResponse>(null as any);
-    const [discordWebhook, setDiscordWebhook] = useState<DiscordWebhookSettingsResponse>(null as any);
     const [error, setError] = useState<string | null>(null);
+    const [smtp, setSmtp] = useState<EmailFormState>({
+        type: "EMAIL",
+        smtpHost: "",
+        smtpPort: 587,
+        smtpUsernameFrom: "",
+        smtpPassword: "",
+        recipientEmail: "",
+        enabled: false,
+    });
+    const [discordWebhook, setDiscordWebhook] = useState<DiscordFormState>({
+        type: "DISCORD",
+        webhookUrl: "",
+        enabled: false,
+    });
 
+    useEffect(() => {
+        api.notifications.getChannels().then((channels) => {
+            for (const ch of channels) {
+                if (ch.type === "EMAIL") setSmtp({ id: ch.id, type: "EMAIL", ...ch.config });
+                if (ch.type === "DISCORD") setDiscordWebhook({ id: ch.id, type: "DISCORD", ...ch.config });
 
+            }
+        });
+    }, []);
 
     // Delete notification channels settings from the backend API
     const handleDeleteNotificationChannels = async (id: string) => {
@@ -181,7 +200,7 @@ function SaveButtonNottifications<T extends { enabled?: boolean }>({ id, type, v
         value: T,
         onError?: (msg: string) => void
     }) {
-    
+
     const channelLabels: Record<TypeChannelsAvailable, string> = {
         DISCORD: "Discord",
         EMAIL: "Email",

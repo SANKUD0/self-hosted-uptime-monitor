@@ -73,13 +73,13 @@ export type MonotoringChecksResponse = {
 }
 
 /** Response payload for Discord webhook settings. */
-export type DiscordWebhookSettingsResponse = {
+export type DiscordConfig = {
     webhookUrl: string;
     enabled: boolean;
 }
 
 /** Response payload for SMTP settings. */
-export type SMTPSettingsResponse = {
+export type EmailConfig = {
     smtpHost: string;
     smtpPort: number;
     smtpUsernameFrom: string;
@@ -87,6 +87,14 @@ export type SMTPSettingsResponse = {
     recipientEmail: string;
     enabled: boolean;
 }
+
+/** Union type for notification channel settings. */
+export type NotificationChannelSettings = 
+ | {id: string; type: "DISCORD"; config: DiscordConfig}
+ | {id: string; type: "EMAIL"; config: EmailConfig};
+
+ export type EmailFormState = EmailConfig & { id?: string; type: "EMAIL" };
+ export type DiscordFormState = DiscordConfig & {id?: string; type: "DISCORD"};
 
 /** Union type for notification channel settings. */
 export type TypeChannelsAvailable =
@@ -215,11 +223,11 @@ export const api = {
     notifications: {
         getChannels: () => fetch(`${BASE_URL}/notifications`).then(res => {
             if (!res.ok) throw new Error(`HTTP ${res.status} `);
-            return res.json() as Promise<DiscordWebhookSettingsResponse | SMTPSettingsResponse>
+            return res.json() as Promise<NotificationChannelSettings[]>
         }),
         getChannel: ({ id }: { id: string }) => fetch(`${BASE_URL}/notifications/${id}`).then(res => {
             if (!res.ok) throw new Error(`HTTP ${res.status} `);
-            return res.json() as Promise<DiscordWebhookSettingsResponse | SMTPSettingsResponse>
+            return res.json() as Promise<NotificationChannelSettings>
         }),
         createChannels: <T extends { id?: string, enabled?: boolean }>({ type, channels }: { type: TypeChannelsAvailable, channels: T }) => fetch(`${BASE_URL}/notifications`, {
             method: "POST",
@@ -239,7 +247,7 @@ export const api = {
             headers: {
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify({ data: { ...channels } }),
+            body: JSON.stringify({ id, data: { ...channels } }),
         }).then(res => {
             if (!res.ok) throw new Error(`HTTP ${res.status} `);
             return res.json();
