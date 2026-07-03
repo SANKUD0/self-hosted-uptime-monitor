@@ -6,6 +6,7 @@ import { UserContactsController } from './presentation/user-contacts.controller'
 import { DiscordNotifier } from './infrastructure/notifiers/discord.notifier';
 import { NotificationsController } from './presentation/notifications.controller';
 import { NotificationChannelsService } from './application/notification-channels.service';
+import { NotificationChannelsRepository } from './infrastructure/notification-channels.repository';
 
 @Module({
   controllers: [UserContactsController, NotificationsController],
@@ -13,6 +14,7 @@ import { NotificationChannelsService } from './application/notification-channels
     NotificationsService,
     NotificationChannelsService,
     UserContactsRepository,
+    NotificationChannelsRepository,
     NotificationChannelsService,
     EmailNotifier,
     DiscordNotifier
