@@ -61,4 +61,13 @@ export class NotificationChannelsRepository {
             throw error;
         }
     }
+
+    async getAll() {
+        try {
+            return await this.prisma.notificationChannelConfig.findMany();
+        } catch (error) {
+            console.error("Error retrieving all notification channel configurations:", error);
+            throw error;
+        }
+    }
 }

@@ -41,4 +41,11 @@ export class NotificationChannelsService {
     async get(id: string) {
         return await this.repository.get(id);
     }
+    /**
+     * Retrieves all notification channels.
+     * @returns An array of all notification channels.
+     */
+    async getAll() {
+        return await this.repository.getAll();
+    }
 }

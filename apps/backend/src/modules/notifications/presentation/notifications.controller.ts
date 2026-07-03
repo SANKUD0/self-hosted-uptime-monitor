@@ -31,8 +31,12 @@ export class NotificationsController {
      * @returns The notification channel with the specified ID.
      */
     @Get(':id')
-    getChannels(@Param('id') id: string) {
+    getChannel(@Param('id') id: string) {
         return this.service.get(id);
+    }
+    @Get()
+    GetChannels() {
+        return this.service.getAll();
     }
     /**
      * Removes a notification channel by its ID.
