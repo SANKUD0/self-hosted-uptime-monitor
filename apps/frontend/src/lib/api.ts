@@ -240,7 +240,7 @@ export const api = {
                 const body = await res.text();
                 throw new Error(`HTTP ${res.status} - ${body}`);
             }
-            return res.json();
+            return res.json() as Promise<NotificationChannelSettings>;
         }),
         updateChannels: <T extends { id: string, enabled?: boolean }>({ id, channels }: { id: string, channels: Omit<T, "id"> }) => fetch(`${BASE_URL}/notifications/${id}`, {
             method: "PATCH",

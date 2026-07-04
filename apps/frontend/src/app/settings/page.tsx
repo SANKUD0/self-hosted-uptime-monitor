@@ -18,7 +18,7 @@ export default function SettingsPage() {
     const [smtp, setSmtp] = useState<EmailFormState>({
         type: "EMAIL",
         smtpHost: "",
-        smtpPort: 587,
+        smtpPort: 0,
         smtpUsernameFrom: "",
         smtpPassword: "",
         recipientEmail: "",
@@ -138,7 +138,7 @@ export default function SettingsPage() {
                             onCheckedChange={(checked: boolean) => setSmtp({ ...smtp, enabled: checked })} />
                     </div>
                     <div className="flex justify-end">
-                        <SaveButtonNottifications id={smtp?.id} type="EMAIL" value={smtp} onError={(msg) => setError(msg)} />
+                        <SaveButtonNottifications id={smtp?.id} type="EMAIL" value={smtp} onError={(msg) => setError(msg)} onSave={(id) => setSmtp({ ...smtp, id })} />
                     </div>
                 </CardContent>
             </Card>
@@ -146,7 +146,7 @@ export default function SettingsPage() {
             {/* Discord */}
             <Card id="discord" className="transition-shadow duration-300">
                 <CardHeader className="relative">
-                    <Trash2 size={18} className="absolute top-0 right-5 text-muted-foreground hover:text-destructive cursor-pointer" />
+                    <DeleteNotificationChannel id={discordWebhook?.id ?? ""} onError={setError} />
                     <div className="flex items-center gap-2">
                         <Icon icon="mdi:discord" height="18" />
                         <CardTitle className="text-base">Discord Webhook</CardTitle>
@@ -180,7 +180,7 @@ export default function SettingsPage() {
                             onCheckedChange={(checked: boolean) => setDiscordWebhook({ ...discordWebhook, enabled: checked })} />
                     </div>
                     <div className="flex justify-end">
-                        <Button>Save changes</Button>
+                        <SaveButtonNottifications id={discordWebhook?.id} type="DISCORD" value={discordWebhook} onError={(msg) => setError(msg)} onSave={(id) => setDiscordWebhook({ ...discordWebhook, id })} />
                     </div>
                 </CardContent>
             </Card>
@@ -191,12 +191,13 @@ export default function SettingsPage() {
 }
 
 // To use this compoenent, the notification channel need to have an id and enabled property.
-function SaveButtonNottifications<T extends { enabled?: boolean }>({ id, type, value, onError, }:
+function SaveButtonNottifications<T extends { enabled?: boolean }>({ id, type, value, onError, onSave }:
     {
         id?: string,
         type: TypeChannelsAvailable,
         value: T,
-        onError?: (msg: string) => void
+        onError?: (msg: string) => void,
+        onSave?: (id: string) => void,
     }) {
 
     const channelLabels: Record<TypeChannelsAvailable, string> = {
@@ -206,8 +207,11 @@ function SaveButtonNottifications<T extends { enabled?: boolean }>({ id, type, v
 
     const handleCreateOrUpdateNotificationChannels = async (id: string | undefined, type: TypeChannelsAvailable, channels: T) => {
         try {
-            id ? await api.notifications.updateChannels({ id, channels }) :
-                await api.notifications.createChannels({ type, channels });
+            if (id) await api.notifications.updateChannels({ id, channels });
+            else {
+                const created = await api.notifications.createChannels({ type, channels });
+                onSave?.(created.id);
+            }
         } catch (error) {
             onError?.(`Failed to save ${channelLabels[type]} notification channels. Please try again.`);
         }
@@ -220,17 +224,17 @@ function SaveButtonNottifications<T extends { enabled?: boolean }>({ id, type, v
     );
 }
 
-function DeleteNotificationChannel({ id, onError }: { id: string, onError?: (msg: string) => void }) {
+function DeleteNotificationChannel({ id, onError }: {
+    id: string,
+    onError?: (msg: string) => void,
+}) {
 
     return (
         <Trash2
             size={18}
             className="absolute top-0 right-5 text-muted-foreground hover:text-destructive cursor-pointer"
             onClick={() => {
-                api.notifications.deleteChannels({ id }).then(() => {
-                    //callback to reflect the deletion in the UI.
-                    window.location.reload();
-                }).catch(() => {
+                api.notifications.deleteChannels({ id }).catch(() => {
                     onError?.("Failed to delete notification channels. Please try again.");
                 });
             }} />
