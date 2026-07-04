@@ -9,12 +9,13 @@ export class NotificationChannelsRepository {
     /** Creates a new notification channel configuration in the database. */
     async create(dto: CreateNotificationChannelDto) {
         try {
-            return await this.prisma.notificationChannelConfig.create({
+            const created = await this.prisma.notificationChannelConfig.create({
                 data: {
                     type: dto.data.type,
                     config: JSON.parse(JSON.stringify(dto.data)),
                 }
-            })
+            });
+            return created;
         } catch (error) {
             console.error("Error creating notification channel configuration:", error);
             throw error;
