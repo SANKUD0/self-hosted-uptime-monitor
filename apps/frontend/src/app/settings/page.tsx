@@ -121,7 +121,7 @@ export default function SettingsPage() {
                                 value={smtp?.recipientEmail ?? ""}
                                 onChange={(e) => setSmtp({ ...smtp, recipientEmail: e.target.value })}
                                 autoComplete="off" />
-                            <Button variant="outline">Send test</Button>
+                            <TestNotificationButton id={smtp?.id ?? ""} onError={setError} />
                         </div>
                     </div>
 
@@ -163,7 +163,7 @@ export default function SettingsPage() {
                                 value={discordWebhook?.webhookUrl ?? ""}
                                 onChange={(e) => setDiscordWebhook({ ...discordWebhook, webhookUrl: e.target.value })}
                                 autoComplete="off" />
-                            <Button variant="outline">Send test</Button>
+                            <TestNotificationButton id={discordWebhook?.id ?? ""} onError={setError} />
                         </div>
                     </div>
 
@@ -238,5 +238,18 @@ function DeleteNotificationChannel({ id, onError }: {
                     onError?.("Failed to delete notification channels. Please try again.");
                 });
             }} />
+    );
+}
+
+function TestNotificationButton({ id, onError }: {
+    id: string,
+    onError?: (msg: string) => void,
+}) {
+    return (
+        <Button variant="outline" onClick={() => {
+            api.notifications.testNotification({ id }).catch(() => {
+                onError?.("Failed to send test notification. Please try again.");
+            });
+        }}>Send test</Button>
     );
 }
