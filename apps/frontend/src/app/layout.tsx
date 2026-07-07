@@ -5,6 +5,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { cn } from "@/lib/utils";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { Toaster } from "@/components/ui/sonner";
 
 const montserrat = Montserrat({subsets:['latin'],variable:'--font-sans'});
 
@@ -36,6 +37,7 @@ export default function RootLayout({
             <AppSidebar />
             <main className="flex-1 min-w-0 overflow-auto">
               {children}
+              <Toaster position="bottom-right" richColors/>
             </main>
           </SidebarProvider>
         </TooltipProvider>
