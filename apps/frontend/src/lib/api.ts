@@ -89,12 +89,12 @@ export type EmailConfig = {
 }
 
 /** Union type for notification channel settings. */
-export type NotificationChannelSettings = 
- | {id: string; type: "DISCORD"; config: DiscordConfig}
- | {id: string; type: "EMAIL"; config: EmailConfig};
+export type NotificationChannelSettings =
+    | { id: string; type: "DISCORD"; config: DiscordConfig }
+    | { id: string; type: "EMAIL"; config: EmailConfig };
 
- export type EmailFormState = EmailConfig & { id?: string; type: "EMAIL" };
- export type DiscordFormState = DiscordConfig & {id?: string; type: "DISCORD"};
+export type EmailFormState = EmailConfig & { id?: string; type: "EMAIL" };
+export type DiscordFormState = DiscordConfig & { id?: string; type: "DISCORD" };
 
 /** Union type for notification channel settings. */
 export type TypeChannelsAvailable =
@@ -248,27 +248,28 @@ export const api = {
                 "Content-Type": "application/json",
             },
             body: JSON.stringify({ id, data: { ...channels } }),
-        }).then(res => {
-            if (!res.ok) throw new Error(`HTTP ${res.status} `);
-            return res.json();
-        }),
+        }).then((res) => handle(res)),
         deleteChannels: ({ id }: { id: string }) => fetch(`${BASE_URL}/notifications/${id}`, {
             method: "DELETE",
             headers: {
                 "Content-Type": "application/json",
             },
-        }).then(res => {
-            if (!res.ok) throw new Error(`HTTP ${res.status} `);
-            return res.json();
-        }),
+        }).then((res) => handle(res)),
         testNotification: ({ id }: { id: string }) => fetch(`${BASE_URL}/notifications/${id}/test`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
             },
-        }).then(res => {
-            if (!res.ok) throw new Error(`HTTP ${res.status} `);
-            return res.json();
-        }),
+        }).then((res) => handle(res)),
     },
+}
+
+
+async function handle<T>(res: Response): Promise<T | null> {
+    if (!res.ok) {
+        const body = await res.text().catch(() => "");
+        throw new Error(`HTTP ${res.status}${body ? ` - ${body}` : ""}`)
+    }
+    const text = await res.text();
+    return text ? (JSON.parse(text) as T) : null;
 }
