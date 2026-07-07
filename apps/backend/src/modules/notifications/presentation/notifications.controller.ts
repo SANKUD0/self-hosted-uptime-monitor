@@ -47,4 +47,13 @@ export class NotificationsController {
     deleteChannels(@Param('id') id: string) {
         return this.service.remove(id);
     }
+    /**
+     * Tests a notification channel by sending a test notification.
+     * @param id The ID of the notification channel to test.
+     * @returns The result of the test notification.
+     */
+    @Post(':id/test')
+    testNotification(@Param('id') id: string) {
+        return this.service.testNotification(id);
+    }
 } 
