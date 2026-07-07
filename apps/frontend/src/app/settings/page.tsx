@@ -10,6 +10,8 @@ import { Icon } from "@iconify/react";
 import { useHighlightSection } from "@/hooks/use-highlight-section";
 import { useEffect, useState } from "react";
 import { api, DiscordFormState, EmailFormState, TypeChannelsAvailable } from "@/lib/api";
+import { toast } from "sonner";
+import { notify } from "@/components/notify";
 
 
 export default function SettingsPage() {
@@ -138,7 +140,7 @@ export default function SettingsPage() {
                             onCheckedChange={(checked: boolean) => setSmtp({ ...smtp, enabled: checked })} />
                     </div>
                     <div className="flex justify-end">
-                        <SaveButtonNottifications id={smtp?.id} type="EMAIL" value={smtp} onError={(msg) => setError(msg)} onSave={(id) => setSmtp({ ...smtp, id })} />
+                        <SaveButtonNottifications id={smtp?.id} type="EMAIL" value={smtp} onSave={(id) => setSmtp({ ...smtp, id })} />
                     </div>
                 </CardContent>
             </Card>
@@ -180,7 +182,7 @@ export default function SettingsPage() {
                             onCheckedChange={(checked: boolean) => setDiscordWebhook({ ...discordWebhook, enabled: checked })} />
                     </div>
                     <div className="flex justify-end">
-                        <SaveButtonNottifications id={discordWebhook?.id} type="DISCORD" value={discordWebhook} onError={(msg) => setError(msg)} onSave={(id) => setDiscordWebhook({ ...discordWebhook, id })} />
+                        <SaveButtonNottifications id={discordWebhook?.id} type="DISCORD" value={discordWebhook}  onSave={(id) => setDiscordWebhook({ ...discordWebhook, id })} />
                     </div>
                 </CardContent>
             </Card>
@@ -191,31 +193,46 @@ export default function SettingsPage() {
 }
 
 // To use this compoenent, the notification channel need to have an id and enabled property.
-function SaveButtonNottifications<T extends { enabled?: boolean }>({ id, type, value, onError, onSave }:
+function SaveButtonNottifications<T extends { enabled?: boolean }>({ id, type, value, onSave }:
     {
         id?: string,
         type: TypeChannelsAvailable,
         value: T,
-        onError?: (msg: string) => void,
         onSave?: (id: string) => void,
     }) {
 
     const channelLabels: Record<TypeChannelsAvailable, string> = {
         DISCORD: "Discord",
         EMAIL: "Email",
-    }
+    };
 
-    const handleCreateOrUpdateNotificationChannels = async (id: string | undefined, type: TypeChannelsAvailable, channels: T) => {
+    const handleCreateOrUpdateNotificationChannels = async (
+        id: string | undefined,
+        type: TypeChannelsAvailable,
+        channels: T
+    ) => {
+        const errorMsg = `Failed to save ${channelLabels[type]} notification channels. Please try again.`;
+
         try {
-            if (id) await api.notifications.updateChannels({ id, channels });
-            else {
-                const created = await api.notifications.createChannels({ type, channels });
-                onSave?.(created.id);
+            if (id) {
+                await notify.promise(api.notifications.updateChannels({ id, channels }), {
+                    loading: "Saving changes...",
+                    success: `${channelLabels[type]} notification channels updated successfully.`,
+                    error: errorMsg,
+                });
+            } else {
+                const created = await notify.promise(api.notifications.createChannels({ type, channels }), {
+                    loading: "Saving changes...",
+                    success: `${channelLabels[type]} notification channels saved successfully.`,
+                    error: errorMsg,
+                    description: "You can now receive notifications",
+                });
+                if (created) onSave?.(created.id);
             }
-        } catch (error) {
-            onError?.(`Failed to save ${channelLabels[type]} notification channels. Please try again.`);
+        } catch {
+            // notify.promise has already displayed the error toast; we simply swallow the rejection.
         }
-    }
+    };
 
     return (
         <Button onClick={() => {
@@ -234,9 +251,12 @@ function DeleteNotificationChannel({ id, onError }: {
             size={18}
             className="absolute top-0 right-5 text-muted-foreground hover:text-destructive cursor-pointer"
             onClick={() => {
-                api.notifications.deleteChannels({ id }).catch(() => {
-                    onError?.("Failed to delete notification channels. Please try again.");
-                });
+                notify.promise(api.notifications.deleteChannels({ id }), {
+                    loading: "Deleting notification channel...",
+                    success: "Notification channel deleted successfully.",
+                    error: "Failed to delete notification channel. Please try again.",
+                    description: "You will no longer receive notifications from this channel.",
+                })
             }} />
     );
 }
@@ -247,9 +267,12 @@ function TestNotificationButton({ id, onError }: {
 }) {
     return (
         <Button variant="outline" onClick={() => {
-            api.notifications.testNotification({ id }).catch(() => {
-                onError?.("Failed to send test notification. Please try again.");
-            });
+            notify.promise(api.notifications.testNotification({ id }), {
+                loading: "Sending test notification...",
+                success: "Test notification sent successfully.",
+                error: "Failed to send test notification. Please check your settings.",
+                description: "Check your email or Discord channel for the test notification.",
+            })
         }}>Send test</Button>
     );
 }
