@@ -261,5 +261,14 @@ export const api = {
             if (!res.ok) throw new Error(`HTTP ${res.status} `);
             return res.json();
         }),
+        testNotification: ({ id }: { id: string }) => fetch(`${BASE_URL}/notifications/${id}/test`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+        }).then(res => {
+            if (!res.ok) throw new Error(`HTTP ${res.status} `);
+            return res.json();
+        }),
     },
 }
