@@ -13,6 +13,22 @@ import { api, DiscordFormState, EmailFormState, TypeChannelsAvailable } from "@/
 import { notify } from "@/components/notify";
 
 
+const EMPTY_EMAIL: EmailFormState = {
+    type: "EMAIL",
+    smtpHost: "",
+    smtpPort: 0,
+    smtpUsernameFrom: "",
+    smtpPassword: "",
+    recipientEmail: "",
+    enabled: false,
+}
+
+const EMPTY_DISCORD: DiscordFormState = {
+    type: "DISCORD",
+    webhookUrl: "",
+    enabled: false,
+}
+
 export default function SettingsPage() {
     return (
         <Suspense fallback={null}>
@@ -23,20 +39,8 @@ export default function SettingsPage() {
 
 function SettingsPageContent() {
     useHighlightSection();
-    const [smtp, setSmtp] = useState<EmailFormState>({
-        type: "EMAIL",
-        smtpHost: "",
-        smtpPort: 0,
-        smtpUsernameFrom: "",
-        smtpPassword: "",
-        recipientEmail: "",
-        enabled: false,
-    });
-    const [discordWebhook, setDiscordWebhook] = useState<DiscordFormState>({
-        type: "DISCORD",
-        webhookUrl: "",
-        enabled: false,
-    });
+    const [smtp, setSmtp] = useState<EmailFormState>(EMPTY_EMAIL);
+    const [discordWebhook, setDiscordWebhook] = useState<DiscordFormState>(EMPTY_DISCORD);
 
     useEffect(() => {
         api.notifications.getChannels().then((channels) => {
@@ -64,7 +68,7 @@ function SettingsPageContent() {
             {/* SMTP */}
             <Card id="email" className="transition-shadow duration-300">
                 <CardHeader className="relative">
-                    <DeleteNotificationChannel id={smtp?.id ?? ""} />
+                    <DeleteNotificationChannel id={smtp?.id ?? ""} onDeleted={() => setSmtp(EMPTY_EMAIL)} />
                     <div className="flex items-center gap-2">
                         <Mail size={18} />
                         <CardTitle className="text-base">SMTP Settings</CardTitle>
@@ -144,7 +148,7 @@ function SettingsPageContent() {
             {/* Discord */}
             <Card id="discord" className="transition-shadow duration-300">
                 <CardHeader className="relative">
-                    <DeleteNotificationChannel id={discordWebhook?.id ?? ""} />
+                    <DeleteNotificationChannel id={discordWebhook?.id ?? ""} onDeleted={() => setDiscordWebhook(EMPTY_DISCORD)} />
                     <div className="flex items-center gap-2">
                         <Icon icon="mdi:discord" height="18" />
                         <CardTitle className="text-base">Discord Webhook</CardTitle>
@@ -213,7 +217,7 @@ function SaveButtonNottifications<T extends { enabled?: boolean }>({ id, type, v
             if (id) {
                 // If the notification channel already exists, update it.
                 // We need to remove the id from the channels object before sending it to the API.
-                const {id: _id, ...channels} = value as T & {id: string};
+                const { id: _id, ...channels } = value as T & { id: string };
                 await notify.promise(api.notifications.updateChannels({ id, channels }), {
                     loading: "Saving changes...",
                     success: `${channelLabels[type]} notification channels updated successfully.`,
@@ -241,8 +245,9 @@ function SaveButtonNottifications<T extends { enabled?: boolean }>({ id, type, v
     );
 }
 
-function DeleteNotificationChannel({ id }: {
+function DeleteNotificationChannel({ id, onDeleted }: {
     id: string,
+    onDeleted?: () => void,
 }) {
 
     return (
@@ -255,7 +260,7 @@ function DeleteNotificationChannel({ id }: {
                     success: "Notification channel deleted successfully.",
                     error: "Failed to delete notification channel. Please try again.",
                     description: "You will no longer receive notifications from this channel.",
-                })
+                }).then(() => onDeleted?.());
             }} />
     );
 }
