@@ -16,7 +16,7 @@ import { notify } from "@/components/notify";
 const EMPTY_EMAIL: EmailFormState = {
     type: "EMAIL",
     smtpHost: "",
-    smtpPort: 0,
+    smtpPort: 1,
     smtpUsernameFrom: "",
     smtpPassword: "",
     recipientEmail: "",
@@ -83,6 +83,8 @@ function SettingsPageContent() {
                             <Label htmlFor="smtp-host">SMTP Host</Label>
                             <Input id="smtp-host" placeholder="smtp.gmail.com"
                                 value={smtp?.smtpHost ?? ""}
+                                maxLength={50}
+                                minLength={1}
                                 onChange={(e) => setSmtp({ ...smtp, smtpHost: e.target.value })}
                                 autoComplete="off" />
                         </div>
@@ -90,6 +92,8 @@ function SettingsPageContent() {
                             <Label htmlFor="port">Port</Label>
                             <Input id="port" type="number" placeholder="587"
                                 value={smtp?.smtpPort ?? ""}
+                                min={1}
+                                max={65535}
                                 onChange={(e) => setSmtp({ ...smtp, smtpPort: Number(e.target.value) })}
                                 autoComplete="off" />
                         </div>
@@ -97,7 +101,9 @@ function SettingsPageContent() {
 
                     <div className="space-y-1.5">
                         <Label htmlFor="username">Username (From)</Label>
-                        <Input id="username" type="text" placeholder="you@gmail.com"
+                        <Input id="username" type="email" placeholder="you@gmail.com"
+                            minLength={1}
+                            maxLength={255}
                             value={smtp?.smtpUsernameFrom ?? ""}
                             onChange={(e) => setSmtp({ ...smtp, smtpUsernameFrom: e.target.value })}
                             autoComplete="off" />
@@ -107,6 +113,8 @@ function SettingsPageContent() {
                         <Label htmlFor="password">Password</Label>
                         <Input id="password" type="password" placeholder="App password"
                             value={smtp?.smtpPassword ?? ""}
+                            minLength={1}
+                            maxLength={100}
                             onChange={(e) => setSmtp({ ...smtp, smtpPassword: e.target.value })}
                             autoComplete="off" />
                         <p className="text-xs text-muted-foreground">
@@ -121,6 +129,8 @@ function SettingsPageContent() {
                         <div className="flex gap-2">
                             <Input id="recipient" type="email" placeholder="alerts@domain.com"
                                 value={smtp?.recipientEmail ?? ""}
+                                minLength={1}
+                                maxLength={255}
                                 onChange={(e) => setSmtp({ ...smtp, recipientEmail: e.target.value })}
                                 autoComplete="off" />
                             <TestNotificationButton id={smtp?.id ?? ""} />
@@ -163,6 +173,7 @@ function SettingsPageContent() {
                         <div className="flex gap-2">
                             <Input id="discord-webhook" placeholder="https://discord.com/api/webhooks/..."
                                 value={discordWebhook?.webhookUrl ?? ""}
+                                type="url"
                                 onChange={(e) => setDiscordWebhook({ ...discordWebhook, webhookUrl: e.target.value })}
                                 autoComplete="off" />
                             <TestNotificationButton id={discordWebhook?.id ?? ""} />
