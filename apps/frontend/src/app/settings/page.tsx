@@ -260,7 +260,7 @@ function SaveButtonNottifications<T extends { enabled?: boolean }>({ id, type, v
     };
 
     return (
-        <Button onSubmit={() => {
+        <Button type="submit" onClick={() => {
             handleCreateOrUpdateNotificationChannels(id, type, value);
         }}>Save changes</Button>
     );
