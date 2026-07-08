@@ -87,14 +87,14 @@ export type EmailConfig = {
     recipientEmail: string;
     enabled: boolean;
 }
+export type EmailFormState = EmailConfig & { id?: string; type: "EMAIL" };
+export type DiscordFormState = DiscordConfig & { id?: string; type: "DISCORD" };
 
 /** Union type for notification channel settings. */
 export type NotificationChannelSettings =
     | { id: string; type: "DISCORD"; config: DiscordConfig }
     | { id: string; type: "EMAIL"; config: EmailConfig };
 
-export type EmailFormState = EmailConfig & { id?: string; type: "EMAIL" };
-export type DiscordFormState = DiscordConfig & { id?: string; type: "DISCORD" };
 
 /** Union type for notification channel settings. */
 export type TypeChannelsAvailable =
@@ -242,13 +242,14 @@ export const api = {
             }
             return res.json() as Promise<NotificationChannelSettings>;
         }),
-        updateChannels: <T extends { id: string, enabled?: boolean }>({ id, channels }: { id: string, channels: Omit<T, "id"> }) => fetch(`${BASE_URL}/notifications/${id}`, {
-            method: "PATCH",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ id, data: { ...channels } }),
-        }).then((res) => handle(res)),
+        updateChannels: <T extends { enabled?: boolean }>({ id, channels }: { id: string, channels: T }) =>
+            fetch(`${BASE_URL}/notifications/${id}`, {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ data: { ...channels } }),
+            }).then((res) => handle(res)),
         deleteChannels: ({ id }: { id: string }) => fetch(`${BASE_URL}/notifications/${id}`, {
             method: "DELETE",
             headers: {
