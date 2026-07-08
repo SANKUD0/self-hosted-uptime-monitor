@@ -211,6 +211,9 @@ function SaveButtonNottifications<T extends { enabled?: boolean }>({ id, type, v
 
         try {
             if (id) {
+                // If the notification channel already exists, update it.
+                // We need to remove the id from the channels object before sending it to the API.
+                const {id: _id, ...channels} = value as T & {id: string};
                 await notify.promise(api.notifications.updateChannels({ id, channels }), {
                     loading: "Saving changes...",
                     success: `${channelLabels[type]} notification channels updated successfully.`,
@@ -225,8 +228,9 @@ function SaveButtonNottifications<T extends { enabled?: boolean }>({ id, type, v
                 });
                 if (created) onSave?.(created.id);
             }
-        } catch {
+        } catch (err) {
             // notify.promise has already displayed the error toast; we simply swallow the rejection.
+            console.log("Error saving notification channels:", err);
         }
     };
 
