@@ -8,15 +8,21 @@ import { Separator } from "@/components/ui/separator";
 import { Mail, Trash2 } from "lucide-react";
 import { Icon } from "@iconify/react";
 import { useHighlightSection } from "@/hooks/use-highlight-section";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { api, DiscordFormState, EmailFormState, TypeChannelsAvailable } from "@/lib/api";
-import { toast } from "sonner";
 import { notify } from "@/components/notify";
 
 
 export default function SettingsPage() {
+    return (
+        <Suspense fallback={null}>
+            <SettingsPageContent />
+        </Suspense>
+    );
+}
+
+function SettingsPageContent() {
     useHighlightSection();
-    const [error, setError] = useState<string | null>(null);
     const [smtp, setSmtp] = useState<EmailFormState>({
         type: "EMAIL",
         smtpHost: "",
@@ -42,16 +48,6 @@ export default function SettingsPage() {
         });
     }, []);
 
-    // Delete notification channels settings from the backend API
-    const handleDeleteNotificationChannels = async (id: string) => {
-        try {
-            await api.notifications.deleteChannels({ id });
-        } catch (error) {
-            setError("Failed to delete notification channels. Please try again.");
-            return;
-        }
-    }
-
     return (
         <div className="max-w-2xl mx-auto px-6 py-8 space-y-6">
 
@@ -68,7 +64,7 @@ export default function SettingsPage() {
             {/* SMTP */}
             <Card id="email" className="transition-shadow duration-300">
                 <CardHeader className="relative">
-                    <DeleteNotificationChannel id={smtp?.id ?? ""} onError={setError} />
+                    <DeleteNotificationChannel id={smtp?.id ?? ""} />
                     <div className="flex items-center gap-2">
                         <Mail size={18} />
                         <CardTitle className="text-base">SMTP Settings</CardTitle>
@@ -123,7 +119,7 @@ export default function SettingsPage() {
                                 value={smtp?.recipientEmail ?? ""}
                                 onChange={(e) => setSmtp({ ...smtp, recipientEmail: e.target.value })}
                                 autoComplete="off" />
-                            <TestNotificationButton id={smtp?.id ?? ""} onError={setError} />
+                            <TestNotificationButton id={smtp?.id ?? ""} />
                         </div>
                     </div>
 
@@ -148,7 +144,7 @@ export default function SettingsPage() {
             {/* Discord */}
             <Card id="discord" className="transition-shadow duration-300">
                 <CardHeader className="relative">
-                    <DeleteNotificationChannel id={discordWebhook?.id ?? ""} onError={setError} />
+                    <DeleteNotificationChannel id={discordWebhook?.id ?? ""} />
                     <div className="flex items-center gap-2">
                         <Icon icon="mdi:discord" height="18" />
                         <CardTitle className="text-base">Discord Webhook</CardTitle>
@@ -165,7 +161,7 @@ export default function SettingsPage() {
                                 value={discordWebhook?.webhookUrl ?? ""}
                                 onChange={(e) => setDiscordWebhook({ ...discordWebhook, webhookUrl: e.target.value })}
                                 autoComplete="off" />
-                            <TestNotificationButton id={discordWebhook?.id ?? ""} onError={setError} />
+                            <TestNotificationButton id={discordWebhook?.id ?? ""} />
                         </div>
                     </div>
 
@@ -182,7 +178,7 @@ export default function SettingsPage() {
                             onCheckedChange={(checked: boolean) => setDiscordWebhook({ ...discordWebhook, enabled: checked })} />
                     </div>
                     <div className="flex justify-end">
-                        <SaveButtonNottifications id={discordWebhook?.id} type="DISCORD" value={discordWebhook}  onSave={(id) => setDiscordWebhook({ ...discordWebhook, id })} />
+                        <SaveButtonNottifications id={discordWebhook?.id} type="DISCORD" value={discordWebhook} onSave={(id) => setDiscordWebhook({ ...discordWebhook, id })} />
                     </div>
                 </CardContent>
             </Card>
@@ -241,9 +237,8 @@ function SaveButtonNottifications<T extends { enabled?: boolean }>({ id, type, v
     );
 }
 
-function DeleteNotificationChannel({ id, onError }: {
+function DeleteNotificationChannel({ id }: {
     id: string,
-    onError?: (msg: string) => void,
 }) {
 
     return (
@@ -261,9 +256,8 @@ function DeleteNotificationChannel({ id, onError }: {
     );
 }
 
-function TestNotificationButton({ id, onError }: {
+function TestNotificationButton({ id }: {
     id: string,
-    onError?: (msg: string) => void,
 }) {
     return (
         <Button variant="outline" onClick={() => {
