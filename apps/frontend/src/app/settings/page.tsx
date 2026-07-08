@@ -69,7 +69,9 @@ function SettingsPageContent() {
             <form>
                 <Card id="email" className="transition-shadow duration-300">
                     <CardHeader className="relative">
-                        <DeleteNotificationChannel id={smtp?.id ?? ""} onDeleted={() => setSmtp(EMPTY_EMAIL)} />
+                        {smtp.id && (
+                            <DeleteNotificationChannel id={smtp.id} onDeleted={() => setSmtp(EMPTY_EMAIL)} />
+                        )}
                         <div className="flex items-center gap-2">
                             <Mail size={18} />
                             <CardTitle className="text-base">SMTP Settings</CardTitle>
@@ -166,7 +168,10 @@ function SettingsPageContent() {
             <form>
                 <Card id="discord" className="transition-shadow duration-300">
                     <CardHeader className="relative">
-                        <DeleteNotificationChannel id={discordWebhook?.id ?? ""} onDeleted={() => setDiscordWebhook(EMPTY_DISCORD)} />
+                        {discordWebhook.id && (
+                            <DeleteNotificationChannel id={discordWebhook?.id ?? ""} onDeleted={() => setDiscordWebhook(EMPTY_DISCORD)} />
+                        )}
+                        {/* <DeleteNotificationChannel id={discordWebhook?.id ?? ""} onDeleted={() => setDiscordWebhook(EMPTY_DISCORD)} /> */}
                         <div className="flex items-center gap-2">
                             <Icon icon="mdi:discord" height="18" />
                             <CardTitle className="text-base">Discord Webhook</CardTitle>
