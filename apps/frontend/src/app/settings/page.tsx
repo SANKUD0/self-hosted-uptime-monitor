@@ -66,137 +66,147 @@ function SettingsPageContent() {
             <Separator />
 
             {/* SMTP */}
-            <Card id="email" className="transition-shadow duration-300">
-                <CardHeader className="relative">
-                    <DeleteNotificationChannel id={smtp?.id ?? ""} onDeleted={() => setSmtp(EMPTY_EMAIL)} />
-                    <div className="flex items-center gap-2">
-                        <Mail size={18} />
-                        <CardTitle className="text-base">SMTP Settings</CardTitle>
-                    </div>
-                    <CardDescription>
-                        Sends email alerts when a service goes down or comes back up.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-1.5">
-                            <Label htmlFor="smtp-host">SMTP Host</Label>
-                            <Input id="smtp-host" placeholder="smtp.gmail.com"
-                                value={smtp?.smtpHost ?? ""}
-                                maxLength={50}
-                                minLength={1}
-                                onChange={(e) => setSmtp({ ...smtp, smtpHost: e.target.value })}
-                                autoComplete="off" />
+            <form>
+                <Card id="email" className="transition-shadow duration-300">
+                    <CardHeader className="relative">
+                        <DeleteNotificationChannel id={smtp?.id ?? ""} onDeleted={() => setSmtp(EMPTY_EMAIL)} />
+                        <div className="flex items-center gap-2">
+                            <Mail size={18} />
+                            <CardTitle className="text-base">SMTP Settings</CardTitle>
                         </div>
-                        <div className="space-y-1.5">
-                            <Label htmlFor="port">Port</Label>
-                            <Input id="port" type="number" placeholder="587"
-                                value={smtp?.smtpPort ?? ""}
-                                min={1}
-                                max={65535}
-                                onChange={(e) => setSmtp({ ...smtp, smtpPort: Number(e.target.value) })}
-                                autoComplete="off" />
+                        <CardDescription>
+                            Sends email alerts when a service goes down or comes back up.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-1.5">
+                                <Label htmlFor="smtp-host">SMTP Host</Label>
+                                <Input id="smtp-host" placeholder="smtp.gmail.com"
+                                    value={smtp?.smtpHost ?? ""}
+                                    maxLength={50}
+                                    minLength={1}
+                                    onChange={(e) => setSmtp({ ...smtp, smtpHost: e.target.value })}
+                                    autoComplete="off"
+                                    required />
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label htmlFor="port">Port</Label>
+                                <Input id="port" type="number" placeholder="587"
+                                    value={smtp?.smtpPort ?? ""}
+                                    min={1}
+                                    max={65535}
+                                    onChange={(e) => setSmtp({ ...smtp, smtpPort: Number(e.target.value) })}
+                                    autoComplete="off"
+                                    required />
+                            </div>
                         </div>
-                    </div>
 
-                    <div className="space-y-1.5">
-                        <Label htmlFor="username">Username (From)</Label>
-                        <Input id="username" type="email" placeholder="you@gmail.com"
-                            minLength={1}
-                            maxLength={255}
-                            value={smtp?.smtpUsernameFrom ?? ""}
-                            onChange={(e) => setSmtp({ ...smtp, smtpUsernameFrom: e.target.value })}
-                            autoComplete="off" />
-                    </div>
-
-                    <div className="space-y-1.5">
-                        <Label htmlFor="password">Password</Label>
-                        <Input id="password" type="password" placeholder="App password"
-                            value={smtp?.smtpPassword ?? ""}
-                            minLength={1}
-                            maxLength={100}
-                            onChange={(e) => setSmtp({ ...smtp, smtpPassword: e.target.value })}
-                            autoComplete="off" />
-                        <p className="text-xs text-muted-foreground">
-                            Gmail requires an App Password, not your regular password.
-                        </p>
-                    </div>
-
-                    <Separator />
-
-                    <div className="space-y-1.5">
-                        <Label htmlFor="recipient">Recipient's Email</Label>
-                        <div className="flex gap-2">
-                            <Input id="recipient" type="email" placeholder="alerts@domain.com"
-                                value={smtp?.recipientEmail ?? ""}
+                        <div className="space-y-1.5">
+                            <Label htmlFor="username">Username (From)</Label>
+                            <Input id="username" type="email" placeholder="you@gmail.com"
                                 minLength={1}
                                 maxLength={255}
-                                onChange={(e) => setSmtp({ ...smtp, recipientEmail: e.target.value })}
-                                autoComplete="off" />
-                            <TestNotificationButton id={smtp?.id ?? ""} />
+                                value={smtp?.smtpUsernameFrom ?? ""}
+                                onChange={(e) => setSmtp({ ...smtp, smtpUsernameFrom: e.target.value })}
+                                autoComplete="off"
+                                required />
                         </div>
-                    </div>
 
-                    <Separator />
-
-                    <div className="flex items-center justify-between">
-                        <div className="space-y-0.5">
-                            <Label htmlFor="enable-smtp" >Enable SMTP</Label>
+                        <div className="space-y-1.5">
+                            <Label htmlFor="password">Password</Label>
+                            <Input id="password" type="password" placeholder="App password"
+                                value={smtp?.smtpPassword ?? ""}
+                                minLength={1}
+                                maxLength={100}
+                                onChange={(e) => setSmtp({ ...smtp, smtpPassword: e.target.value })}
+                                autoComplete="off"
+                                required />
                             <p className="text-xs text-muted-foreground">
-                                Send an email on every status change.
+                                Gmail requires an App Password, not your regular password.
                             </p>
                         </div>
-                        <Switch id="enable-smtp" checked={smtp?.enabled ?? false}
-                            onCheckedChange={(checked: boolean) => setSmtp({ ...smtp, enabled: checked })} />
-                    </div>
-                    <div className="flex justify-end">
-                        <SaveButtonNottifications id={smtp?.id} type="EMAIL" value={smtp} onSave={(id) => setSmtp({ ...smtp, id })} />
-                    </div>
-                </CardContent>
-            </Card>
+
+                        <Separator />
+
+                        <div className="space-y-1.5">
+                            <Label htmlFor="recipient">Recipient's Email</Label>
+                            <div className="flex gap-2">
+                                <Input id="recipient" type="email" placeholder="alerts@domain.com"
+                                    value={smtp?.recipientEmail ?? ""}
+                                    minLength={1}
+                                    maxLength={255}
+                                    onChange={(e) => setSmtp({ ...smtp, recipientEmail: e.target.value })}
+                                    autoComplete="off"
+                                    required />
+                                <TestNotificationButton id={smtp?.id ?? ""} />
+                            </div>
+                        </div>
+
+                        <Separator />
+
+                        <div className="flex items-center justify-between">
+                            <div className="space-y-0.5">
+                                <Label htmlFor="enable-smtp" >Enable SMTP</Label>
+                                <p className="text-xs text-muted-foreground">
+                                    Send an email on every status change.
+                                </p>
+                            </div>
+                            <Switch id="enable-smtp" checked={smtp?.enabled ?? false}
+                                onCheckedChange={(checked: boolean) => setSmtp({ ...smtp, enabled: checked })} />
+                        </div>
+                        <div className="flex justify-end">
+                            <SaveButtonNottifications id={smtp?.id} type="EMAIL" value={smtp} onSave={(id) => setSmtp({ ...smtp, id })} />
+                        </div>
+                    </CardContent>
+                </Card>
+            </form>
 
             {/* Discord */}
-            <Card id="discord" className="transition-shadow duration-300">
-                <CardHeader className="relative">
-                    <DeleteNotificationChannel id={discordWebhook?.id ?? ""} onDeleted={() => setDiscordWebhook(EMPTY_DISCORD)} />
-                    <div className="flex items-center gap-2">
-                        <Icon icon="mdi:discord" height="18" />
-                        <CardTitle className="text-base">Discord Webhook</CardTitle>
-                    </div>
-                    <CardDescription>
-                        Sends notifications to a Discord channel when a service goes down or comes back up.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="space-y-1.5">
-                        <Label htmlFor="discord-webhook">Webhook URL</Label>
-                        <div className="flex gap-2">
-                            <Input id="discord-webhook" placeholder="https://discord.com/api/webhooks/..."
-                                value={discordWebhook?.webhookUrl ?? ""}
-                                type="url"
-                                onChange={(e) => setDiscordWebhook({ ...discordWebhook, webhookUrl: e.target.value })}
-                                autoComplete="off" />
-                            <TestNotificationButton id={discordWebhook?.id ?? ""} />
+            <form>
+                <Card id="discord" className="transition-shadow duration-300">
+                    <CardHeader className="relative">
+                        <DeleteNotificationChannel id={discordWebhook?.id ?? ""} onDeleted={() => setDiscordWebhook(EMPTY_DISCORD)} />
+                        <div className="flex items-center gap-2">
+                            <Icon icon="mdi:discord" height="18" />
+                            <CardTitle className="text-base">Discord Webhook</CardTitle>
                         </div>
-                    </div>
-
-                    <Separator />
-
-                    <div className="flex items-center justify-between">
-                        <div className="space-y-0.5">
-                            <Label htmlFor="enable-discord">Enable Discord</Label>
-                            <p className="text-xs text-muted-foreground">
-                                Post a message in your channel on every incident.
-                            </p>
+                        <CardDescription>
+                            Sends notifications to a Discord channel when a service goes down or comes back up.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="space-y-1.5">
+                            <Label htmlFor="discord-webhook">Webhook URL</Label>
+                            <div className="flex gap-2">
+                                <Input id="discord-webhook" placeholder="https://discord.com/api/webhooks/..."
+                                    value={discordWebhook?.webhookUrl ?? ""}
+                                    type="url"
+                                    onChange={(e) => setDiscordWebhook({ ...discordWebhook, webhookUrl: e.target.value })}
+                                    autoComplete="off"
+                                    required />
+                                <TestNotificationButton id={discordWebhook?.id ?? ""} />
+                            </div>
                         </div>
-                        <Switch id="enable-discord" checked={discordWebhook?.enabled ?? false}
-                            onCheckedChange={(checked: boolean) => setDiscordWebhook({ ...discordWebhook, enabled: checked })} />
-                    </div>
-                    <div className="flex justify-end">
-                        <SaveButtonNottifications id={discordWebhook?.id} type="DISCORD" value={discordWebhook} onSave={(id) => setDiscordWebhook({ ...discordWebhook, id })} />
-                    </div>
-                </CardContent>
-            </Card>
+
+                        <Separator />
+
+                        <div className="flex items-center justify-between">
+                            <div className="space-y-0.5">
+                                <Label htmlFor="enable-discord">Enable Discord</Label>
+                                <p className="text-xs text-muted-foreground">
+                                    Post a message in your channel on every incident.
+                                </p>
+                            </div>
+                            <Switch id="enable-discord" checked={discordWebhook?.enabled ?? false}
+                                onCheckedChange={(checked: boolean) => setDiscordWebhook({ ...discordWebhook, enabled: checked })} />
+                        </div>
+                        <div className="flex justify-end">
+                            <SaveButtonNottifications id={discordWebhook?.id} type="DISCORD" value={discordWebhook} onSave={(id) => setDiscordWebhook({ ...discordWebhook, id })} />
+                        </div>
+                    </CardContent>
+                </Card>
+            </form>
 
 
         </div>
@@ -250,7 +260,7 @@ function SaveButtonNottifications<T extends { enabled?: boolean }>({ id, type, v
     };
 
     return (
-        <Button onClick={() => {
+        <Button onSubmit={() => {
             handleCreateOrUpdateNotificationChannels(id, type, value);
         }}>Save changes</Button>
     );
