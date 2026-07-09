@@ -11,6 +11,7 @@ import { useHighlightSection } from "@/hooks/use-highlight-section";
 import { Suspense, useEffect, useState } from "react";
 import { api, DiscordFormState, EmailFormState, TypeChannelsAvailable } from "@/lib/api";
 import { notify } from "@/components/notify";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 
 const EMPTY_EMAIL: EmailFormState = {
@@ -276,18 +277,39 @@ function DeleteNotificationChannel({ id, onDeleted }: {
     onDeleted?: () => void,
 }) {
 
+    const handleDelete = () => {
+        notify.promise(api.notifications.deleteChannels({ id }), {
+            loading: "Deleting notification channel...",
+            success: "Notification channel deleted successfully.",
+            error: "Failed to delete notification channel. Please try again.",
+            description: "You will no longer receive notifications from this channel.",
+        }).then(() => onDeleted?.());
+    }
+
     return (
-        <Trash2
-            size={18}
-            className="absolute top-0 right-5 text-muted-foreground hover:text-destructive cursor-pointer"
-            onClick={() => {
-                notify.promise(api.notifications.deleteChannels({ id }), {
-                    loading: "Deleting notification channel...",
-                    success: "Notification channel deleted successfully.",
-                    error: "Failed to delete notification channel. Please try again.",
-                    description: "You will no longer receive notifications from this channel.",
-                }).then(() => onDeleted?.());
-            }} />
+        <AlertDialog>
+            <AlertDialogTrigger asChild>
+                <Trash2
+                    size={18}
+                    className="absolute top-0 right-5 text-muted-foreground hover:text-destructive cursor-pointer"
+                />
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Delete notification channel?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        You will no longer receive notifications from this channel.
+                        This action cannot be undone.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDelete}>
+                        Delete
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
     );
 }
 
