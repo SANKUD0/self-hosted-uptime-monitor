@@ -1,9 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Notifier, NotificationPayload } from '../../domain/notifier.interface';
+import { ContactType } from '@prisma/client';
 
 @Injectable()
 export class DiscordNotifier implements Notifier {
   private readonly logger = new Logger(DiscordNotifier.name);
+
+  readonly type = ContactType.DISCORD;
 
   async send(recipient: string, payload: NotificationPayload): Promise<void> {
     const isAlert =
@@ -40,5 +43,10 @@ export class DiscordNotifier implements Notifier {
     }
 
     this.logger.log('Discord notification sent');
+  }
+
+  async sendFromConfig(config: unknown, payload: NotificationPayload): Promise<void> {
+    const {webhookUrl} = config as {webhookUrl: string};
+    await this.send(webhookUrl, payload);
   }
 }

@@ -1,5 +1,7 @@
+import { ContactType } from "@prisma/client";
+
 /**
- * Payload d'une notification à envoyer.
+ * Payload of a notification to be sent.
  */
 export interface NotificationPayload {
   title: string;
@@ -7,16 +9,29 @@ export interface NotificationPayload {
 }
 
 /**
- * Interface que tous les notifiers doivent implémenter.
- * Pattern Strategy : permet d'avoir EmailNotifier, SmsNotifier, etc.
+ * Interface that all notifiers must implement.
+ * Strategy Pattern: allows having EmailNotifier, SmsNotifier, etc.
  */
 export interface Notifier {
   /**
-   * Envoie une notification au destinataire.
+   * Send a notification to a recipient using the notifier's configuration.
    * 
-   * @param recipient - adresse email pour EmailNotifier, numéro pour SmsNotifier
-   * @param payload - contenu de la notification
-   * @throws Error si l'envoi échoue
+   * @param recipient - the recipient's address (e.g., email for EmailNotifier, phone number for SmsNotifier)
+   * @param payload - the notification content
+   * @throws Error if sending fails
    */
   send(recipient: string, payload: NotificationPayload): Promise<void>;
+
+}
+
+export interface ChannelNotifier {
+  /** The type of contact this notifier handles (e.g., EMAIL, SMS) */
+  readonly type: ContactType;
+  /**
+   * Send a notification using the channel's configuration.
+   * @param config - the channel's configuration
+   * @param payload - the notification payload
+   * @throws Error if sending fails
+   */
+  sendFromConfig(config: unknown, payload: NotificationPayload): Promise<void>;
 }

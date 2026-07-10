@@ -10,17 +10,29 @@ import {
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
+    SidebarMenuSub,
+    SidebarMenuSubButton,
+    SidebarMenuSubItem,
+    SidebarRail,
+    SidebarTrigger,
+    useSidebar,
 } from "@/components/ui/sidebar"
-import { LayoutGrid } from "lucide-react"
+import { ChevronRight, LayoutGrid, Mail, PanelLeftClose, PanelLeftOpen, Settings } from "lucide-react"
 import Link from "next/link"
 import { Icon } from "@iconify/react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./ui/dropdown-menu";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "./ui/collapsible";
+import { Separator } from "./ui/separator";
+import { Button } from "./ui/button";
 
 <Icon icon="material-symbols:space-dashboard-2-outline" />
 
 export function AppSidebar() {
     return (
-        <Sidebar>
-            <SidebarHeader />
+        <Sidebar collapsible="icon">
+            <SidebarHeader>
+                <CustomSidebarTrigger />
+            </SidebarHeader>
             <SidebarContent>
                 <SidebarGroup>
                     <SidebarGroupLabel>Navigation</SidebarGroupLabel>
@@ -54,7 +66,94 @@ export function AppSidebar() {
                     </SidebarGroupContent>
                 </SidebarGroup>
             </SidebarContent>
-            <SidebarFooter />
+            <Separator />
+            <SidebarFooter>
+                <SidebarMenu>
+                    <SettingsMenu />
+                </SidebarMenu>
+            </SidebarFooter>
         </Sidebar>
     )
+}
+
+function SettingsMenu() {
+    const { state } = useSidebar();
+    const isCollapsed = state === "collapsed";
+
+    if (isCollapsed) {
+        return (
+            <SidebarMenuItem>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <SidebarMenuButton>
+                            <Settings size={16} />
+                            <span>Settings</span>
+                        </SidebarMenuButton>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent side="right" align="end">
+                        <DropdownMenuItem asChild>
+                            <Link href="/settings">General</Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                            <Link href="/settings#email">Email</Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                            <Link href="/settings#discord">Discord</Link>
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            </SidebarMenuItem>
+        );
+    }
+
+    return (
+        <SidebarMenuItem>
+            <Collapsible className="group/collapsible">
+                <CollapsibleTrigger asChild>
+                    <SidebarMenuButton>
+                        <Settings size={16} />
+                        <span>Settings</span>
+                        <ChevronRight className="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-90" />
+                    </SidebarMenuButton>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                    <SidebarMenuSub>
+                        <SidebarMenuSubItem>
+                            <SidebarMenuSubButton asChild>
+                                <Link href="/settings#email">
+                                    <Mail size={16} />
+                                    <span>Email</span>
+                                </Link>
+                            </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                        <SidebarMenuSubItem>
+                            <SidebarMenuSubButton asChild>
+                                <Link href="/settings#discord">
+                                    <Icon icon="mdi:discord" height="1em" />
+                                    <span>Discord</span>
+                                </Link>
+                            </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                    </SidebarMenuSub>
+                </CollapsibleContent>
+            </Collapsible>
+        </SidebarMenuItem>
+    );
+}
+
+
+function CustomSidebarTrigger() {
+    const { toggleSidebar, state } = useSidebar();
+    const isOpen = state === "expanded";
+
+    return (
+        <Button variant="ghost" size="icon" onClick={toggleSidebar} className="h-8 w-8 transition-all hover:bg-sidebar-accent">
+            <PanelLeftClose className={`absolute transition-all duration-300 
+            ${isOpen ? "rotate-0 scale-100 opacity-100" : "rotate-180 scale-0 opacity-0"}`}
+                size={16} />
+            <PanelLeftOpen className={`absolute transition-all duration-300 
+            ${isOpen ? "rotate-180 scale-0 opacity-0" : "rotate-0 scale-100 opacity-100"}`}
+                size={16} />
+        </Button>
+    );
 }
