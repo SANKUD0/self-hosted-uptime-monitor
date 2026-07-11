@@ -102,7 +102,28 @@ export type TypeChannelsAvailable =
     "EMAIL";
 
 
+export type CreateServiceRequest = {
+    id?: string;
+    name: string;
+    type: ServiceType;
+    target: string;
+    intervalSeconds: number;
+    timeoutMs: number;
+    failureThreshold: number;
+    enabled: boolean;
+}
 
+export type ServiceType =
+    "DOCKER" |
+    "HTTP" |
+    "TCP" |
+    "PING";
+export const serviceTypeSelect: { value: ServiceType, label: string }[] = [
+    { value: "DOCKER", label: "Docker" },
+    { value: "HTTP", label: "HTTP" },
+    { value: "TCP", label: "TCP" },
+    { value: "PING", label: "Ping" }
+]
 
 /**
  * Lightweight typed API client for the monolith backend.
@@ -143,16 +164,13 @@ export const api = {
             return res.json() as Promise<ServicesCardInfo[]>
         }),
         /** Creates a new monitored service. */
-        saveNewService: (service: { name: string; type: string; target: string; intervalSeconds: number; timeoutMs: number; failureThreshold: number; enabled: boolean }) => fetch(`${BASE_URL}/services`, {
+        saveNewService: (service: CreateServiceRequest) => fetch(`${BASE_URL}/services`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
             },
             body: JSON.stringify(service),
-        }).then(res => {
-            if (!res.ok) throw new Error(`HTTP ${res.status} `);
-            return res.json();
-        }),
+        }).then((res) => handle(res)),
         /** Deletes a service by id. */
         delete: (id: string) => fetch(`${BASE_URL}/services/${id}`, {
             method: "DELETE",
