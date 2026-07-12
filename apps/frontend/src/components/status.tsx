@@ -2,6 +2,7 @@ const statusConfig: Record<string, { dot: string; label: string; text: string }>
     UP:      { dot: "bg-green-500", label: "bg-green-500/15 text-green-600", text: "UP" },
     DOWN:    { dot: "bg-red-500",   label: "bg-red-500/15 text-red-600",     text: "DOWN" },
     TIMEOUT: { dot: "bg-yellow-500", label: "bg-yellow-500/15 text-yellow-600", text: "TIMEOUT" },
+    NEW:    { dot: "bg-blue-500",  label: "bg-blue-500/15 text-blue-600",   text: "NEW" },
 };
 
 export default function StatusBadge({ status }: { status?: string }) {
