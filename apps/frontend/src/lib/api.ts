@@ -164,7 +164,7 @@ export const api = {
             return res.json() as Promise<ServicesCardInfo[]>
         }),
         /** Creates a new monitored service. */
-        saveNewService: (service: CreateServiceRequest) => fetch(`${BASE_URL}/services`, {
+        saveNewService: (service: CreateServiceRequest): Promise<ServicesCardInfo | null> => fetch(`${BASE_URL}/services`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
