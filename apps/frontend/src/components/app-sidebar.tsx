@@ -38,30 +38,12 @@ export function AppSidebar() {
                     <SidebarGroupLabel>Navigation</SidebarGroupLabel>
                     <SidebarGroupContent>
                         <SidebarMenu>
-                            <SidebarMenuItem>
-                                <SidebarMenuButton asChild>
-                                    <Link href="/">
-                                        <Icon icon="material-symbols:space-dashboard-2-outline" height="1em" />
-                                        <span>Dashboard</span>
-                                    </Link>
-                                </SidebarMenuButton>
-                            </SidebarMenuItem>
-                            <SidebarMenuItem>
-                                <SidebarMenuButton asChild>
-                                    <Link href="/services">
-                                        <Icon icon="mdi:server-outline" height="1em" />
-                                        <span>Services</span>
-                                    </Link>
-                                </SidebarMenuButton>
-                            </SidebarMenuItem>
-                            <SidebarMenuItem>
-                                <SidebarMenuButton asChild>
-                                    <Link href="/incidents">
-                                        <Icon icon="mdi:alert-circle-outline" height="1em" />
-                                        <span>Incidents</span>
-                                    </Link>
-                                </SidebarMenuButton>
-                            </SidebarMenuItem>
+                            <NavLink href="/" label="Dashboard"
+                                icon={<Icon icon="material-symbols:space-dashboard-2-outline" height="1em" />} />
+                            <NavLink href="/services" label="Services"
+                                icon={<Icon icon="mdi:server-outline" height="1em" />} />
+                            <NavLink href="/incidents" label="Incidents"
+                                icon={<Icon icon="mdi:alert-circle-outline" height="1em" />} />
                         </SidebarMenu>
                     </SidebarGroupContent>
                 </SidebarGroup>
@@ -118,22 +100,8 @@ function SettingsMenu() {
                 </CollapsibleTrigger>
                 <CollapsibleContent>
                     <SidebarMenuSub>
-                        <SidebarMenuSubItem>
-                            <SidebarMenuSubButton asChild>
-                                <Link href="/settings#email">
-                                    <Mail size={16} />
-                                    <span>Email</span>
-                                </Link>
-                            </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                        <SidebarMenuSubItem>
-                            <SidebarMenuSubButton asChild>
-                                <Link href="/settings#discord">
-                                    <Icon icon="mdi:discord" height="1em" />
-                                    <span>Discord</span>
-                                </Link>
-                            </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
+                        <SubNavLink href="settings#email" icon={<Mail size={16} />} label="Email" />
+                        <SubNavLink href="/settings#discord" icon={<Icon icon="mdi:discord" height="1em" />} label="Discord" />
                     </SidebarMenuSub>
                 </CollapsibleContent>
             </Collapsible>
@@ -155,5 +123,35 @@ function CustomSidebarTrigger() {
             ${isOpen ? "rotate-180 scale-0 opacity-0" : "rotate-0 scale-100 opacity-100"}`}
                 size={16} />
         </Button>
+    );
+}
+
+function NavLink({ href, icon, label }: { href: string; icon: React.ReactNode; label: string }) {
+    const { isMobile, setOpenMobile } = useSidebar();
+
+    return (
+        <SidebarMenuItem>
+            <SidebarMenuButton asChild>
+                <Link href={href} onClick={() => isMobile && setOpenMobile(false)}>
+                    {icon}
+                    <span>{label}</span>
+                </Link>
+            </SidebarMenuButton>
+        </SidebarMenuItem>
+    );
+}
+
+function SubNavLink({ href, icon, label }: { href: string; icon: React.ReactNode; label: string }) {
+    const { isMobile, setOpenMobile } = useSidebar();
+
+    return (
+        <SidebarMenuSubItem>
+            <SidebarMenuSubButton asChild>
+                <Link href={href} onClick={() => isMobile && setOpenMobile(false)}>
+                    {icon}
+                    <span>{label}</span>
+                </Link>
+            </SidebarMenuSubButton>
+        </SidebarMenuSubItem>
     );
 }
