@@ -529,6 +529,16 @@ function StatusBadge({ status }: { status: string }) {
       dot: "bg-amber-500",
       pulse: false,
     },
+    UNKNOWN: {
+      style: "bg-muted text-muted-foreground border-muted/30",
+      dot: "bg-muted-foreground",
+      pulse: false,
+    },
+    NEW: {
+      style: "bg-blue-500/15 text-blue-700 border-blue-500/30 dark:text-blue-400",
+      dot: "bg-blue-500",
+      pulse: true,
+    },
   };
   const c = config[status] || config.DOWN;
 

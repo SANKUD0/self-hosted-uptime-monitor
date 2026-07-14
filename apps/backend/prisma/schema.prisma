@@ -76,6 +76,9 @@ enum CheckStatus {
   UP
   DOWN
   TIMEOUT
+  UNKNOWN
+  NO_RESPONSE
+  NEW
 }
 
 // =====================================================

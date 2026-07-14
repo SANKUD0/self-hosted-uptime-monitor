@@ -1,66 +1,63 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import {
     Dialog, DialogContent, DialogDescription,
     DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import StatusBadge, { StatusBadgeEnabled } from "@/components/status";
-import { api, MonotoringChecksResponse, ServicesCardInfo } from "@/lib/api";
+import { api, CreateServiceRequest, MonotoringChecksResponse, ServicesCardInfo, ServiceType, serviceTypeSelect } from "@/lib/api";
 import { msToSeconds } from "@/lib/duration";
-import { X, Zap, Timer } from "lucide-react";
+import { X } from "lucide-react";
 import React, { useEffect, useState } from "react";
-import { PageFetchError } from "@/components/ui/fetch-error/page-fetch-error";
 import { TableFetchError } from "@/components/ui/fetch-error/table-fetch-error";
 import styles from "./page.module.css";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+const EMPTY_SERVICE: CreateServiceRequest = {
+    name: "",
+    type: "PING",
+    target: "",
+    intervalSeconds: 60,
+    timeoutMs: 5000,
+    failureThreshold: 3,
+    enabled: true,
+}
+
+
 
 export default function ServicesPage() {
     const [services, setServices] = useState<ServicesCardInfo[]>([]);
     const [error, setError] = useState<string | null>(null);
     const [open, setOpen] = useState(false);
     const [selected, setSelected] = useState<ServicesCardInfo | null>(null);
-    const [newService, setNewService] = useState({
-        name: "",
-        type: "",
-        target: "",
-        intervalSeconds: 60,
-        timeoutMs: 5000,
-        failureThreshold: 3,
-        enabled: true,
-    });
+    const [newService, setNewService] = useState<CreateServiceRequest>(EMPTY_SERVICE);
 
 
     const fetchServices = () => {
         api.services.getServicesCardsInfos()
             .then(setServices)
             .catch((err) => setError(err.message));
-        // api.services.getService()
-        //     .then(setServices)
-        //     .catch((err) => setError(err.message));
     };
 
-
-
+    // Initial fetch
     useEffect(() => {
         fetchServices();
-
     }, [selected]);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         api.services.saveNewService(newService)
-            .then(() => {
+            .then((created) => {
+                if (!created) {
+                    setError("Failed to add service. Please try again.");
+                    return;
+                }
                 fetchServices();
                 setOpen(false);
-                setNewService({
-                    name: "", type: "", target: "",
-                    intervalSeconds: 60, timeoutMs: 5000,
-                    failureThreshold: 3, enabled: true,
-                });
+                setNewService(EMPTY_SERVICE);
             })
             .catch((err) => setError(err.message));
     };
@@ -103,8 +100,27 @@ export default function ServicesPage() {
                                     </Field>
                                     <Field>
                                         <FieldLabel htmlFor="type">Type</FieldLabel>
-                                        <Input id="type" required value={newService.type}
-                                            onChange={(e) => setNewService({ ...newService, type: e.target.value })} />
+                                        {/* <Input id="type" required value={newService.type}
+                                            onChange={(e) => setNewService({ ...newService, type: e.target.value })} /> */}
+                                        <Select
+                                            value={newService.type}
+                                            onValueChange={(value) =>
+                                                setNewService({ ...newService, type: value as ServiceType })
+                                            }
+                                        >
+                                            <SelectTrigger id="type">
+                                                <SelectValue placeholder="Choisir un type" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectGroup>
+                                                    {serviceTypeSelect.map((item) => (
+                                                        <SelectItem key={item.value} value={item.value}>
+                                                            {item.label}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectGroup>
+                                            </SelectContent>
+                                        </Select>
                                     </Field>
                                     <Field>
                                         <FieldLabel htmlFor="target">Target</FieldLabel>
@@ -123,7 +139,11 @@ export default function ServicesPage() {
                                         <Field>
                                             <FieldLabel htmlFor="intervalSeconds">Interval (s)</FieldLabel>
                                             <Input id="intervalSeconds" type="number" required value={newService.intervalSeconds}
-                                                onChange={(e) => setNewService({ ...newService, intervalSeconds: parseInt(e.target.value) })} />
+                                                onChange={(e) => {
+                                                    const parsed = Number.parseInt(e.target.value, 10);
+                                                    if (Number.isNaN(parsed)) return;
+                                                    setNewService({ ...newService, intervalSeconds: parsed });
+                                                }} />
                                         </Field>
                                         <Field>
                                             <div>
@@ -133,13 +153,21 @@ export default function ServicesPage() {
                                                 </span>
                                             </div>
                                             <Input id="timeoutMs" type="number" required value={newService.timeoutMs}
-                                                onChange={(e) => setNewService({ ...newService, timeoutMs: parseInt(e.target.value) })} />
+                                                onChange={(e) => {
+                                                    const parsed = Number.parseInt(e.target.value, 10);
+                                                    if (Number.isNaN(parsed)) return;
+                                                    setNewService({ ...newService, timeoutMs: parsed });
+                                                }} />
                                         </Field>
                                         <Field>
                                             <FieldLabel htmlFor="failureThreshold">Failure Threshold</FieldLabel>
                                             <Input id="failureThreshold" type="number" min="0" max="10" required
                                                 value={newService.failureThreshold}
-                                                onChange={(e) => setNewService({ ...newService, failureThreshold: parseInt(e.target.value) })} />
+                                                onChange={(e) => {
+                                                    const parsed = Number.parseInt(e.target.value, 10);
+                                                    if (Number.isNaN(parsed)) return;
+                                                    setNewService({ ...newService, failureThreshold: parsed });
+                                                }} />
                                         </Field>
                                     </div>
                                 </FieldGroup>
