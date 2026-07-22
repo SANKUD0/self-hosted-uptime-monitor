@@ -54,7 +54,7 @@ function SettingsPageContent() {
     }, []);
 
     return (
-        <div className="max-w-2xl mx-auto px-6 py-8 space-y-6">
+        <div className="max-w-2xl mx-auto px-4 py-6 sm:px-6 sm:py-8 space-y-6">
 
             {/* Header */}
             <div>
@@ -82,7 +82,7 @@ function SettingsPageContent() {
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <div className="space-y-1.5">
                                 <Label htmlFor="smtp-host">SMTP Host</Label>
                                 <Input id="smtp-host" placeholder="smtp.gmail.com"
@@ -134,7 +134,7 @@ function SettingsPageContent() {
 
                         <div className="space-y-1.5">
                             <Label htmlFor="recipient">Recipient's Email</Label>
-                            <div className="flex gap-2">
+                            <div className="flex flex-col gap-2 sm:flex-row">
                                 <Input id="recipient" type="email" placeholder="alerts@domain.com"
                                     value={smtp?.recipientEmail ?? ""}
                                     minLength={1}
@@ -184,7 +184,7 @@ function SettingsPageContent() {
                     <CardContent className="space-y-4">
                         <div className="space-y-1.5">
                             <Label htmlFor="discord-webhook">Webhook URL</Label>
-                            <div className="flex gap-2">
+                            <div className="flex flex-col gap-2 sm:flex-row">
                                 <Input id="discord-webhook" placeholder="https://discord.com/api/webhooks/..."
                                     value={discordWebhook?.webhookUrl ?? ""}
                                     type="url"

@@ -186,7 +186,7 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Badge variant="outline" className="gap-2 px-3 py-1.5 bg-card">
               <span className="relative flex size-2">
                 <span
@@ -226,7 +226,7 @@ export default function Home() {
           <StatCard title="Services DOWN" value={down} error={errorDown} icon={ArrowDownCircle} accent="danger" />
           <StatCard title="Incidents OPEN" value={incidents} error={errorIncidents} icon={AlertTriangle} accent="warning" />
 
-          <Card>
+          <Card className="col-span-2 lg:col-span-1">
             <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
               <CardDescription className="flex items-center gap-2">MTTR</CardDescription>
               <Clock className="size-4 text-muted-foreground" />
@@ -287,6 +287,62 @@ export default function Home() {
             <CardDescription>Latest status for all services — live via WebSocket</CardDescription>
           </CardHeader>
           <CardContent className="px-0">
+            {/* Mobile: card list */}
+            <div className="space-y-2 px-4 md:hidden">
+              {errorMonitoring ? (
+                <div className="py-8 text-center text-sm text-red-600">{errorMonitoring}</div>
+              ) : monitoringData.length === 0 ? (
+                <div className="py-12">
+                  <EmptyState
+                    icon={Inbox}
+                    title="No services monitored"
+                    description="Services you add will appear here once monitoring starts."
+                  />
+                </div>
+              ) : (
+                monitoringData.map((entry) => (
+                  <div
+                    key={entry.id}
+                    className={`rounded-lg border p-3 ${entry.status === "DOWN" ? "border-red-500/30 bg-red-500/5" : ""}`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="min-w-0 truncate text-sm font-medium">{entry.service.name}</p>
+                      <StatusBadge status={entry.status} />
+                    </div>
+                    <p className="mt-1 truncate font-mono text-xs text-muted-foreground">
+                      {entry.service.target}
+                    </p>
+                    <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs">
+                      <Badge variant="outline" className="font-mono text-xs">
+                        {entry.service.type}
+                      </Badge>
+                      {!entry.service.enabled && (
+                        <Badge variant="outline" className="bg-muted text-muted-foreground">
+                          <X className="size-3 mr-1" />
+                          Disabled
+                        </Badge>
+                      )}
+                      {entry.latencyMs !== null && (
+                        <span
+                          className={`font-mono tabular-nums ${entry.latencyMs > 1000 ? "font-semibold text-amber-600" : "text-muted-foreground"}`}
+                        >
+                          {entry.latencyMs} ms
+                        </span>
+                      )}
+                      {entry.statusCode !== null && (
+                        <span className="font-mono text-muted-foreground">HTTP {entry.statusCode}</span>
+                      )}
+                    </div>
+                    {entry.error && (
+                      <p className="mt-1.5 break-words text-xs text-amber-600">{entry.error}</p>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Desktop: full table */}
+            <div className="hidden md:block">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -419,6 +475,7 @@ export default function Home() {
                 )}
               </TableBody>
             </Table>
+            </div>
           </CardContent>
         </Card>
 
@@ -618,7 +675,10 @@ function LatencyBarChart({
           dataKey="serviceName"
           tickLine={false}
           axisLine={false}
-          width={120}
+          width={90}
+          tickFormatter={(value: string) =>
+            value.length > 11 ? `${value.slice(0, 10)}…` : value
+          }
           className="text-xs"
         />
         <ChartTooltip
