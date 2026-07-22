@@ -4,32 +4,30 @@ services:
       context: ./apps/frontend
       args:
         - NEXT_PUBLIC_API_URL=http://k15-server:3004
-    container_name: opennotify-frontend
     restart: unless-stopped
     ports:
       - "3003:3000"
     env_file:
       - ./apps/frontend/.env
     environment:
-      - MONOLITH_API_URL=http://opennotify-backend:3001
+      - MONOLITH_API_URL=http://backend:3001
     networks:
-      - opennotify-net
+      - app-net
 
   backend:
     build:
       context: ./apps/backend
-    container_name: opennotify-backend
     restart: unless-stopped
     ports:
       - "3004:3001"
     env_file:
       - ./apps/backend/.env
     networks:
-      - opennotify-net
+      - app-net
       - shared-net
 
 networks:
-  opennotify-net:
+  app-net:
     driver: bridge
   shared-net:
     external: true
