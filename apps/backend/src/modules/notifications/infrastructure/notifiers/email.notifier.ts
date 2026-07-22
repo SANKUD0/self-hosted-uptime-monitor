@@ -1,12 +1,16 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
 import { Transporter } from 'nodemailer';
-import { Notifier, NotificationPayload } from '../../domain/notifier.interface';
+import { Notifier, NotificationPayload, ChannelNotifier } from '../../domain/notifier.interface';
+import { ContactType } from '@prisma/client';
 
 @Injectable()
-export class EmailNotifier implements Notifier, OnModuleInit {
+export class EmailNotifier implements Notifier, ChannelNotifier, OnModuleInit {
+
   private readonly logger = new Logger(EmailNotifier.name);
   private transporter!: Transporter;
+
+  readonly type = ContactType.EMAIL;
 
   async onModuleInit() {
     this.transporter = nodemailer.createTransport({
@@ -36,5 +40,49 @@ export class EmailNotifier implements Notifier, OnModuleInit {
       text: payload.message,
     });
     this.logger.log(`Email sent to ${recipient}`);
+  }
+
+  async sendWithConfig(
+    config: {
+      smtpHost: string;
+      smtpPort: number;
+      smtpUsernameFrom: string;
+      smtpPassword: string;
+      recipientEmail: string;
+    },
+    payload: NotificationPayload,
+  ): Promise<void> {
+    const transporter = nodemailer.createTransport({
+      host: config.smtpHost,
+      port: config.smtpPort,
+      secure: false, // STARTTLS over port 587
+      auth: {
+        user: config.smtpUsernameFrom,
+        pass: config.smtpPassword,
+      },
+    });
+    this.logger.debug(
+      `SMTP test → host=${config.smtpHost} port=${config.smtpPort} user=${config.smtpUsernameFrom} passLen=${config.smtpPassword?.length}`
+    );
+    await transporter.sendMail({
+      from: config.smtpUsernameFrom,
+      to: config.recipientEmail,
+      subject: payload.title,
+      text: payload.message,
+    });
+    this.logger.log(`Test email sent to ${config.recipientEmail}`);
+  }
+
+  async sendFromConfig(config: unknown, payload: NotificationPayload): Promise<void> {
+    await this.sendWithConfig(
+      config as {
+        smtpHost: string;
+        smtpPort: number;
+        smtpUsernameFrom: string;
+        smtpPassword: string;
+        recipientEmail: string;
+      },
+      payload,
+    );
   }
 }

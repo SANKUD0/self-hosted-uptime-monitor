@@ -1,575 +1,548 @@
 "use client";
 
+import { Fragment, useEffect, useState } from "react";
+import { ChevronRight, Plus, X } from "lucide-react";
+
+import { useIsMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils";
+
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import {
     Dialog, DialogContent, DialogDescription,
     DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+    Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+} from "@/components/ui/table";
+import {
+    Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import StatusBadge, { StatusBadgeEnabled } from "@/components/status";
-import { api, MonotoringChecksResponse, ServicesCardInfo } from "@/lib/api";
-import { msToSeconds } from "@/lib/duration";
-import { X, Zap, Timer } from "lucide-react";
-import React, { useEffect, useState } from "react";
-import { PageFetchError } from "@/components/ui/fetch-error/page-fetch-error";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { TableFetchError } from "@/components/ui/fetch-error/table-fetch-error";
-import styles from "./page.module.css";
+import StatusBadge, { StatusBadgeEnabled } from "@/components/status";
+
+import {
+    api, CreateServiceRequest, MonotoringChecksResponse,
+    ServicesCardInfo, ServiceType, serviceTypeSelect,
+} from "@/lib/api";
+import { msToSeconds } from "@/lib/duration";
+
+const EMPTY_SERVICE: CreateServiceRequest = {
+    name: "", type: "PING", target: "",
+    intervalSeconds: 60, timeoutMs: 5000, failureThreshold: 3, enabled: true,
+};
+
+const formatLatency = (ms?: number | null) =>
+    ms == null ? "—" : ms >= 1000 ? `${msToSeconds(ms).toFixed(2)}s` : `${ms}ms`;
+
+type ServicePatch = Partial<ServicesCardInfo["service"]>;
+
+
 
 export default function ServicesPage() {
+    const isMobile = useIsMobile();
+
     const [services, setServices] = useState<ServicesCardInfo[]>([]);
     const [error, setError] = useState<string | null>(null);
-    const [open, setOpen] = useState(false);
-    const [selected, setSelected] = useState<ServicesCardInfo | null>(null);
-    const [newService, setNewService] = useState({
-        name: "",
-        type: "",
-        target: "",
-        intervalSeconds: 60,
-        timeoutMs: 5000,
-        failureThreshold: 3,
-        enabled: true,
-    });
+    const [addOpen, setAddOpen] = useState(false);
 
+    const [openId, setOpenId] = useState<string | null>(null);
 
-    const fetchServices = () => {
+    const selected = services.find((s) => s.service.id === openId) ?? null;
+
+    const fetchServices = () =>
         api.services.getServicesCardsInfos()
             .then(setServices)
-            .catch((err) => setError(err.message));
-        // api.services.getService()
-        //     .then(setServices)
-        //     .catch((err) => setError(err.message));
-    };
+            .catch((e) => setError(e.message));
 
+    useEffect(() => { fetchServices(); }, []);
 
+    const patchService = (id: string, patch: ServicePatch) =>
+        setServices((list) =>
+            list.map((item) =>
+                item.service.id === id
+                    ? { ...item, service: { ...item.service, ...patch } }
+                    : item
+            )
+        );
 
-    useEffect(() => {
-        fetchServices();
+    const close = () => setOpenId(null);
 
-    }, [selected]);
-
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        api.services.saveNewService(newService)
-            .then(() => {
-                fetchServices();
-                setOpen(false);
-                setNewService({
-                    name: "", type: "", target: "",
-                    intervalSeconds: 60, timeoutMs: 5000,
-                    failureThreshold: 3, enabled: true,
-                });
-            })
-            .catch((err) => setError(err.message));
-    };
+    // Mobile  : chevron | Nom | Statut
+    // Desktop : Nom | Statut | Activé
+    const COLS = 3;
 
     return (
-        <div className="flex h-[calc(100vh-40px)]">
+        <div className="flex h-full">
 
-            {/* ── Gauche : table ── */}
-            <div className={`flex flex-col transition-all duration-300 ${selected ? 'w-2/5' : 'w-full'
-                }`}>
-                {/* Header */}
-                <div className="p-6 pb-4 flex justify-between items-center">
-                    <h1 className="text-2xl font-bold">
+            {/* ---------- LISTE ---------- */}
+            <section className="flex min-w-0 flex-1 flex-col overflow-hidden">
+
+                <header className="flex shrink-0 items-center justify-between gap-3 p-4 sm:p-6">
+                    <h1 className="text-xl font-bold sm:text-2xl">
                         Services
                         <span className="ml-2 text-sm font-normal text-muted-foreground">
-                            ({services.length ?? 0})
+                            ({services.length})
                         </span>
                     </h1>
 
-                    {/* Dialog Ajouter */}
-                    <Dialog open={open} onOpenChange={setOpen}>
+                    <Dialog open={addOpen} onOpenChange={setAddOpen}>
                         <DialogTrigger asChild>
-                            <Button size="sm" className="cursor-pointer">
-                                + Add Service
+                            <Button size="sm" className="shrink-0 whitespace-nowrap">
+                                <Plus className="size-4" />
+                                <span className="hidden sm:inline">Ajouter un service</span>
                             </Button>
                         </DialogTrigger>
-                        <DialogContent>
-                            <DialogHeader>
-                                <DialogTitle>Add a new Service</DialogTitle>
-                                <DialogDescription>
-                                    Fill in the details for the new service.
-                                </DialogDescription>
-                            </DialogHeader>
-                            <form onSubmit={handleSubmit}>
-                                <FieldGroup className="gap-4">
-                                    <Field>
-                                        <FieldLabel htmlFor="name">Name</FieldLabel>
-                                        <Input id="name" required value={newService.name}
-                                            onChange={(e) => setNewService({ ...newService, name: e.target.value })} />
-                                    </Field>
-                                    <Field>
-                                        <FieldLabel htmlFor="type">Type</FieldLabel>
-                                        <Input id="type" required value={newService.type}
-                                            onChange={(e) => setNewService({ ...newService, type: e.target.value })} />
-                                    </Field>
-                                    <Field>
-                                        <FieldLabel htmlFor="target">Target</FieldLabel>
-                                        <Input id="target" required value={newService.target}
-                                            onChange={(e) => setNewService({ ...newService, target: e.target.value })} />
-                                    </Field>
-                                    <Field orientation="horizontal" className="items-center gap-3">
-                                        <input id="enabled" type="checkbox" checked={newService.enabled}
-                                            onChange={(e) => setNewService({ ...newService, enabled: e.target.checked })}
-                                            className="h-4 w-4 cursor-pointer accent-primary" />
-                                        <FieldLabel htmlFor="enabled" className="cursor-pointer">
-                                            Service Enabled
-                                        </FieldLabel>
-                                    </Field>
-                                    <div className="grid grid-cols-3 gap-3 items-end">
-                                        <Field>
-                                            <FieldLabel htmlFor="intervalSeconds">Interval (s)</FieldLabel>
-                                            <Input id="intervalSeconds" type="number" required value={newService.intervalSeconds}
-                                                onChange={(e) => setNewService({ ...newService, intervalSeconds: parseInt(e.target.value) })} />
-                                        </Field>
-                                        <Field>
-                                            <div>
-                                                <FieldLabel htmlFor="timeoutMs">Timeout (ms)</FieldLabel>
-                                                <span className="text-xs text-muted-foreground pl-2">
-                                                    {msToSeconds(newService.timeoutMs)}sec
-                                                </span>
-                                            </div>
-                                            <Input id="timeoutMs" type="number" required value={newService.timeoutMs}
-                                                onChange={(e) => setNewService({ ...newService, timeoutMs: parseInt(e.target.value) })} />
-                                        </Field>
-                                        <Field>
-                                            <FieldLabel htmlFor="failureThreshold">Failure Threshold</FieldLabel>
-                                            <Input id="failureThreshold" type="number" min="0" max="10" required
-                                                value={newService.failureThreshold}
-                                                onChange={(e) => setNewService({ ...newService, failureThreshold: parseInt(e.target.value) })} />
-                                        </Field>
-                                    </div>
-                                </FieldGroup>
-                                <DialogFooter className="mt-6">
-                                    <Button type="submit" className="cursor-pointer">Create Service</Button>
-                                </DialogFooter>
-                            </form>
-                        </DialogContent>
+                        <AddServiceDialog
+                            onCreated={() => { fetchServices(); setAddOpen(false); }}
+                            onError={setError}
+                        />
                     </Dialog>
-                </div>
+                </header>
 
-                {/* Table */}
-                <div className="px-6 pb-6 overflow-auto">
-                    <div className="rounded-lg border overflow-hidden">
-                        <table className="w-full text-sm">
-                            <thead className="bg-muted/50 border-b">
-                                <tr>
-                                    <th className="text-left p-3 font-medium">Nom</th>
-                                    <th className="text-left p-3 font-medium">Statut</th>
-                                    <th className="text-left p-3 font-medium">Enabled</th>
-                                </tr>
-                            </thead>
-                            <tbody>
+                <div className="flex-1 overflow-auto px-4 pb-4 sm:px-6 sm:pb-6">
+                    <div className="overflow-hidden rounded-lg border">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    {isMobile && <TableHead className="w-10" />}
+                                    <TableHead>Nom</TableHead>
+                                    <TableHead>Statut</TableHead>
+                                    {!isMobile && <TableHead>Activé</TableHead>}
+                                </TableRow>
+                            </TableHeader>
+
+                            <TableBody>
                                 {error ? (
-                                    <TableFetchError colSpan={2} message={error} onRetry={fetchServices} />
+                                    <TableFetchError colSpan={COLS} message={error} onRetry={fetchServices} />
                                 ) : services.length === 0 ? (
-                                    <tr>
-                                        <td colSpan={2} className="p-6 text-center text-muted-foreground">
-                                            Aucun service. Ajoutez-en un!
-                                        </td>
-                                    </tr>
+                                    <TableRow>
+                                        <TableCell colSpan={COLS} className="h-24 text-center text-muted-foreground">
+                                            Aucun service pour l’instant. Ajoutez-en un.
+                                        </TableCell>
+                                    </TableRow>
                                 ) : (
-                                    services.map((s) => (
-                                        <tr
-                                            key={s.service.id}
-                                            onClick={() => setSelected(
-                                                selected?.service.id === s.service.id ? null : s
-                                            )}
-                                            className={`border-t cursor-pointer transition-colors ${selected?.service.id === s.service.id
-                                                ? 'bg-primary/5 border-l-2 border-l-primary'
-                                                : 'hover:bg-muted/30'
-                                                }`}
-                                        >
-                                            <td className="p-3 font-medium">{s.service.name}</td>
-                                            <td className="p-3">
-                                                <StatusBadge status={s.status} />
-                                            </td>
-                                            <td className="p-3">
-                                                <StatusBadgeEnabled enabled={s.service.enabled} />
-                                            </td>
-                                        </tr>
-                                    ))
+                                    services.map((s) => {
+                                        const isOpen = openId === s.service.id;
+                                        return (
+                                            <Fragment key={s.service.id}>
+
+                                                <TableRow
+                                                    onClick={() => setOpenId(isOpen ? null : s.service.id)}
+                                                    aria-expanded={isMobile ? isOpen : undefined}
+                                                    className={cn(
+                                                        "cursor-pointer",
+                                                        // Desktop
+                                                        isOpen && !isMobile && "border-l-2 border-l-primary bg-primary/5",
+                                                        // Mobile 
+                                                        isOpen && isMobile && "bg-muted/40"
+                                                    )}
+                                                >
+                                                    {isMobile && (
+                                                        <TableCell>
+                                                            <ChevronRight
+                                                                className={cn(
+                                                                    "size-4 text-muted-foreground transition-transform duration-200",
+                                                                    isOpen && "rotate-90"
+                                                                )}
+                                                            />
+                                                        </TableCell>
+                                                    )}
+
+                                                    <TableCell className="font-medium">
+                                                        {s.service.name}
+                                                        {/* Mobile */}
+                                                        {isMobile && !s.service.enabled && (
+                                                            <span className="ml-2 text-xs font-normal text-muted-foreground">
+                                                                en pause
+                                                            </span>
+                                                        )}
+                                                    </TableCell>
+
+                                                    <TableCell><StatusBadge status={s.status} /></TableCell>
+
+                                                    {!isMobile && (
+                                                        <TableCell>
+                                                            <StatusBadgeEnabled enabled={s.service.enabled} />
+                                                        </TableCell>
+                                                    )}
+                                                </TableRow>
+
+                                                {/* Mobile */}
+                                                {isMobile && isOpen && (
+                                                    <TableRow className="hover:bg-transparent">
+                                                        <TableCell
+                                                            colSpan={COLS}
+                                                            className="border-l-2 border-l-primary bg-muted/20 p-0"
+                                                        >
+                                                            <ServiceDetail
+                                                                key={s.service.id}
+                                                                service={s}
+                                                                variant="inline"
+                                                                onClose={close}
+                                                                onRefresh={fetchServices}
+                                                                onPatch={patchService}
+                                                            />
+                                                        </TableCell>
+                                                    </TableRow>
+                                                )}
+                                            </Fragment>
+                                        );
+                                    })
                                 )}
-                            </tbody>
-                        </table>
+                            </TableBody>
+                        </Table>
                     </div>
                 </div>
-            </div>
+            </section>
 
-            {/* ── Droite : panneau détail ── */}
-            {selected && (
-                <div className="w-3/5 border-l p-6 overflow-auto">
-                    <ServiceDetailPanel
+            {/* Desktop */}
+            {!isMobile && selected && (
+                <aside className="w-[420px] shrink-0 overflow-y-auto border-l">
+                    <ServiceDetail
+                        key={selected.service.id}
                         service={selected}
-                        onClose={() => setSelected(null)}
+                        variant="panel"
+                        onClose={close}
                         onRefresh={fetchServices}
-                        onServiceUpdated={(serviceId, patch) => {
-                            setServices((current) =>
-                                current.map((item) =>
-                                    item.service.id === serviceId
-                                        ? {
-                                            ...item,
-                                            service: {
-                                                ...item.service,
-                                                ...patch,
-                                            },
-                                        }
-                                        : item
-                                )
-                            );
-
-                            setSelected((current) =>
-                                current && current.service.id === serviceId
-                                    ? {
-                                        ...current,
-                                        service: {
-                                            ...current.service,
-                                            ...patch,
-                                        },
-                                    }
-                                    : current
-                            );
-                        }}
-                        onEnabledChange={(serviceId, nextEnabled) => {
-                            setServices((current) =>
-                                current.map((item) =>
-                                    item.service.id === serviceId
-                                        ? {
-                                            ...item,
-                                            service: {
-                                                ...item.service,
-                                                enabled: nextEnabled,
-                                            },
-                                        }
-                                        : item
-                                )
-                            );
-
-                            setSelected((current) =>
-                                current && current.service.id === serviceId
-                                    ? {
-                                        ...current,
-                                        service: {
-                                            ...current.service,
-                                            enabled: nextEnabled,
-                                        },
-                                    }
-                                    : current
-                            );
-                        }}
+                        onPatch={patchService}
                     />
-                </div>
+                </aside>
             )}
         </div>
     );
 }
 
-// ── Panneau de détail (dans le même fichier pour commencer) ──
-function ServiceDetailPanel({ service, onClose, onRefresh, onEnabledChange, onServiceUpdated, }: { service: ServicesCardInfo; onClose: () => void; onRefresh: () => void; onEnabledChange: (serviceId: string, nextEnabled: boolean) => void; onServiceUpdated: (serviceId: string, patch: { name?: string; type?: string; intervalSeconds?: number; timeoutMs?: number; failureThreshold?: number }) => void; }) {
-    const [confirmOpen, setConfirmOpen] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const [details, setDetails] = useState<any>(null);
-    const [monitoringChecks, setMonitoringChecks] = useState<MonotoringChecksResponse[]>([]);
-    const [monitoringError, setMonitoringError] = useState<string | null>(null);
-    const [editOpen, setEditOpen] = useState(false);
-    const [editedService, setEditedService] = useState({
-        id: service.service.id,
-        name: service.service.name,
-        type: service.service.type,
-        target: details?.target ?? '',
-        intervalSeconds: service.service.intervalSeconds,
-        timeoutMs: service.service.timeoutMs ?? 5000,
-        failureThreshold: service.service.failureThreshold ?? 3,
-    });
-    const [enabled, setEnabled] = useState(service.service.enabled);
+function ServiceDetail({
+    service, variant, onClose, onRefresh, onPatch,
+}: {
+    service: ServicesCardInfo;
+    variant: "panel" | "inline";
+    onClose: () => void;
+    onRefresh: () => void;
+    onPatch: (id: string, patch: ServicePatch) => void;
+}) {
+    const s = service.service;
+    const isPanel = variant === "panel";
 
-    const handleDelete = async (id: string) => {
-        await api.services.delete(id);
+    const [editing, setEditing] = useState(false);
+    const [confirmOpen, setConfirmOpen] = useState(false);
+    const [target, setTarget] = useState("");
+    const [checks, setChecks] = useState<MonotoringChecksResponse[]>([]);
+    const [checksError, setChecksError] = useState<string | null>(null);
+    const [form, setForm] = useState({ ...s, target: "" });
+
+    const loadChecks = () =>
+        api.monitoring.get5FirstRecentChecksForService({ id: s.id })
+            .then(setChecks)
+            .catch((e) => setChecksError(e.message));
+
+    useEffect(() => {
+        api.services.getService(s.id).then((data) => {
+            const t = data?.target ?? "";
+            setTarget(t);
+            setForm({ ...s, target: t });
+        });
+        loadChecks();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [s.id]);
+
+    const toggle = async (next: boolean) => {
+        onPatch(s.id, { enabled: next });      
+        try {
+            await api.services.enableDisableService(s.id, next);
+        } catch {
+            onPatch(s.id, { enabled: !next });    
+        }
+    };
+
+    const save = async () => {
+        await api.services.patch(s.id, form);
+        onPatch(s.id, form);
+        setTarget(form.target);
+        setEditing(false);
+        onRefresh();
+    };
+
+    const remove = async () => {
+        await api.services.delete(s.id);
         setConfirmOpen(false);
         onRefresh();
         onClose();
     };
-    const fetchMonitoring = (serviceId: string) => {
-        api.monitoring.get5FirstRecentChecksForService({ id: serviceId })
-            .then(setMonitoringChecks)
-            .catch((err) => setMonitoringError(err.message));
-    }
-
-    /**
-     * Enabling/disabling a service is a very common action that we want to be as snappy as possible in the UI, so we optimistically update the UI before the API call, and roll back if it fails. We also have a dedicated API route for this action to make it more efficient and explicit (see api.services.enableDisableService).
-    */
-    const handleToggle = async (nextEnabled: boolean) => {
-        const previousEnabled = enabled;
-
-        setEnabled(nextEnabled);
-        onEnabledChange(service.service.id, nextEnabled);
-
-        try {
-            await api.services.enableDisableService(service.service.id, nextEnabled);
-            onRefresh();
-        } catch (err: any) {
-            setEnabled(previousEnabled);
-            onEnabledChange(service.service.id, previousEnabled);
-            setError(err.message);
-        }
-    };
-
-    /**
-     * Save edited service details. 
-     */
-    const handleSave = async () => {
-        await api.services.patch(editedService.id, {
-            name: editedService.name,
-            type: editedService.type,
-            target: editedService.target,
-            intervalSeconds: editedService.intervalSeconds,
-            timeoutMs: editedService.timeoutMs,
-            failureThreshold: editedService.failureThreshold,
-        });
-
-        onServiceUpdated(editedService.id, {
-            name: editedService.name,
-            type: editedService.type,
-            intervalSeconds: editedService.intervalSeconds,
-            timeoutMs: editedService.timeoutMs,
-            failureThreshold: editedService.failureThreshold,
-        });
-        setDetails((current: any) => ({
-            ...current,
-            target: editedService.target,
-        }));
-        setEditOpen(false);
-        onRefresh();
-    }
-
-    useEffect(() => {
-        setEditOpen(false);
-        setEditedService({
-            id: service.service.id,
-            name: service.service.name,
-            type: service.service.type,
-            target: "",
-            intervalSeconds: service.service.intervalSeconds,
-            timeoutMs: service.service.timeoutMs ?? 5000,
-            failureThreshold: service.service.failureThreshold ?? 3,
-        });
-
-        api.services.getService(service.service.id)
-            .then((data) => {
-                setDetails(data);
-                setEditedService((current) => ({
-                    ...current,
-                    target: data?.target ?? "",
-                }));
-            })
-            .catch((err) => {
-                setError(err.message);
-            });
-        setEnabled(service.service.enabled);
-        if (service) fetchMonitoring(service.service.id);
-    }, [service.service.id, service.service.enabled]);
 
     return (
-        <div className="h-full flex flex-col">
-            {/* Header */}
-            <div className="flex items-start justify-between mb-6">
-                <div>
-                    <div className="flex items-center gap-3">
-                        {editOpen ? (
-                            <>
-                                <Input value={editedService.name} onChange={(e) => setEditedService({ ...editedService, name: e.target.value })} className="text-xl font-bold" />
 
-                            </>
-                        ) : (<h2 className="text-xl font-bold">{service.service.name}</h2>)
-
-                        }
-                        <div className={`${styles.toggle}`}>
-                            <input checked={enabled} onChange={(e) => void handleToggle(e.target.checked)} type="checkbox" id="toggle-service" />
-                            <label htmlFor="toggle-service"></label>
+        <div
+            className={cn("@container flex flex-col gap-5 p-4 sm:p-6", isPanel && "h-full")}
+            onClick={(e) => e.stopPropagation()}
+        >
+            {isPanel ? (
+                <header className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                        <div className="flex items-center gap-3">
+                            <h2 className="truncate text-xl font-bold">{s.name}</h2>
+                            <Switch checked={s.enabled} onCheckedChange={toggle}
+                                aria-label="Activer le service" className="shrink-0" />
                         </div>
+                        <div className="mt-1"><StatusBadge status={service.status} /></div>
                     </div>
-                    <div className="mt-1">
-                        <StatusBadge status={service.status} />
-                    </div>
-                </div>
-                <button onClick={onClose} className="p-1 rounded hover:bg-muted transition-colors" >
-                    <X className="h-4 w-4" />
-                </button>
-            </div>
+                    <Button variant="ghost" size="icon" onClick={onClose}
+                        aria-label="Fermer le panneau" className="shrink-0">
+                        <X className="size-4" />
+                    </Button>
+                </header>
+            ) : (
 
-            {/* Infos */}
-            <div className="grid grid-cols-2 gap-4 mb-6">
-                {editOpen ? (
+                <div className="flex items-center gap-3">
+                    <Switch checked={s.enabled} onCheckedChange={toggle}
+                        aria-label="Activer le service" />
+                    <Label className="text-muted-foreground">
+                        {s.enabled ? "Surveillance active" : "Surveillance en pause"}
+                    </Label>
+                </div>
+            )}
+
+   
+            <div className="grid grid-cols-1 gap-4 @lg:grid-cols-2 @3xl:grid-cols-4">
+                {editing ? (
                     <>
                         <Field>
-                            <FieldLabel htmlFor="type">Type</FieldLabel>
-                            <select value={editedService.type} onChange={(e) => setEditedService({ ...editedService, type: e.target.value })} className="border bg-transparent px-2 py-1 rounded">
-                                <option value="HTTP">HTTP</option>
-                                <option value="PING">PING</option>
-                                <option value="TCP">TCP</option>
-                                <option value="DOCKER">DOCKER</option>
-                            </select>
+                            <FieldLabel htmlFor={`name-${s.id}`}>Nom</FieldLabel>
+                            <Input id={`name-${s.id}`} value={form.name}
+                                onChange={(e) => setForm({ ...form, name: e.target.value })} />
                         </Field>
                         <Field>
-                            <FieldLabel htmlFor="target">Target</FieldLabel>
-                            <Input id="target" required value={editedService.target} onChange={(e) => setEditedService({ ...editedService, target: e.target.value })} />
+                            <FieldLabel htmlFor={`type-${s.id}`}>Type</FieldLabel>
+                            <Select value={form.type}
+                                onValueChange={(v) => setForm({ ...form, type: v as ServiceType })}>
+                                <SelectTrigger id={`type-${s.id}`} className="w-full"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                    {serviceTypeSelect.map((i) => (
+                                        <SelectItem key={i.value} value={i.value}>{i.label}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </Field>
-                        <Field>
-                            <FieldLabel htmlFor="intervalSeconds">Interval (s)</FieldLabel>
-                            <Input
-                                id="intervalSeconds"
-                                type="number"
-                                required
-                                value={editedService.intervalSeconds}
-                                onChange={(e) => {
-                                    const parsed = Number.parseInt(e.target.value, 10);
-                                    if (Number.isNaN(parsed)) return;
-                                    setEditedService((current) => ({ ...current, intervalSeconds: parsed }));
-                                }}
-                            />
+                        <Field className="@lg:col-span-2">
+                            <FieldLabel htmlFor={`target-${s.id}`}>Cible</FieldLabel>
+                            <Input id={`target-${s.id}`} value={form.target}
+                                onChange={(e) => setForm({ ...form, target: e.target.value })} />
                         </Field>
-                        <Field>
-                            <FieldLabel htmlFor="timeoutMs">Timeout (ms)</FieldLabel>
-                            <Input
-                                id="timeoutMs"
-                                type="number"
-                                required
-                                value={editedService.timeoutMs ?? 5000}
-                                onChange={(e) => {
-                                    const parsed = Number.parseInt(e.target.value, 10);
-                                    if (Number.isNaN(parsed)) return;
-                                    setEditedService((current) => ({ ...current, timeoutMs: parsed }));
-                                }}
-                            />
-                        </Field>
-                        <Field>
-                            <FieldLabel htmlFor="failureThreshold">Failure Threshold</FieldLabel>
-                            <Input
-                                id="failureThreshold"
-                                type="number"
-                                min="0"
-                                max="10"
-                                required
-                                value={editedService.failureThreshold ?? 3}
-                                onChange={(e) => {
-                                    const parsed = Number.parseInt(e.target.value, 10);
-                                    if (Number.isNaN(parsed)) return;
-                                    setEditedService((current) => ({ ...current, failureThreshold: parsed }));
-                                }}
-                            />
-                        </Field>
+                        <NumberField id={`interval-${s.id}`} label="Intervalle (s)"
+                            value={form.intervalSeconds}
+                            onValue={(v) => setForm({ ...form, intervalSeconds: v })} />
+                        <NumberField id={`timeout-${s.id}`} label="Timeout (ms)"
+                            value={form.timeoutMs ?? 5000}
+                            onValue={(v) => setForm({ ...form, timeoutMs: v })} />
+                        <NumberField id={`threshold-${s.id}`} label="Seuil d’échec" min={0} max={10}
+                            value={form.failureThreshold ?? 3}
+                            onValue={(v) => setForm({ ...form, failureThreshold: v })} />
                     </>
                 ) : (
                     <>
-                        <InfoItem label="Type" value={service.service.type} mono />
-                        <InfoItem label="Target" value={details?.target ?? '—'} />
-                        <InfoItem label="Intervalle" value={`${service.service.intervalSeconds}s`} />
-                        <InfoItem label="Timeout" value={service.service.timeoutMs != null ? `${service.service.timeoutMs}ms` : '—'} />
-                        <InfoItem label="Failure Threshold" value={service.service.failureThreshold != null ? `${service.service.failureThreshold}` : '—'} />
-                    </>)}
-                <InfoItem label="Latence" value={service.latencyMs != null ? service.latencyMs >= 1000 ? `${msToSeconds(service.latencyMs).toFixed(2)}s` : `${service.latencyMs}ms` : '—'} />
+                        <Info label="Type" value={s.type} mono />
+                        <Info label="Cible" value={target || "—"} className="@lg:col-span-2" />
+                        <Info label="Latence" value={formatLatency(service.latencyMs)} />
+                        <Info label="Intervalle" value={`${s.intervalSeconds}s`} />
+                        <Info label="Timeout" value={s.timeoutMs != null ? `${s.timeoutMs}ms` : "—"} />
+                        <Info label="Seuil d’échec" value={`${s.failureThreshold ?? "—"}`} />
+                    </>
+                )}
             </div>
 
-            {/* Derniers checks */}
-            <div className="mb-6">
-                <h3 className="text-sm font-semibold mb-3 text-muted-foreground uppercase tracking-wide">
-                    Derniers checks
-                </h3>
-                <div className="text-sm text-muted-foreground italic space-y-1">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th className="pr-4 text-left">Timestamp</th>
-                                <th className="pr-4 text-left">Code</th>
-                                <th className="pr-4 text-left">Status</th>
-                                <th className="text-left">Latency</th>
-                            </tr>
-                        </thead>
-                        {monitoringError ? (
-                            <TableFetchError colSpan={4} message={monitoringError} onRetry={() => fetchMonitoring(service.service.id)} />
-                        ) : (
-                            <>
-                                {monitoringChecks.map((check) => (
-                                    <React.Fragment key={check.id}>
-                                        <tbody>
-                                            <tr>
-                                                <td className="pr-4">{new Date(check.timestamp).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "medium" })}</td>
-                                                <td className="pr-4">{check.statusCode ?? '—'}</td>
-                                                <td className="pr-4">
-                                                    <StatusBadge status={check.status} />
-                                                </td>
-                                                <td>{check.latencyMs != null ? check.latencyMs >= 1000 ? `${msToSeconds(check.latencyMs).toFixed(2)}s` : `${check.latencyMs}ms` : '—'}</td>
-                                            </tr>
-                                        </tbody>
-                                    </React.Fragment>
-                                ))}
-                            </>
-                        )}
-                    </table>
-                </div>
-            </div>
+            <ChecksList checks={checks} error={checksError} onRetry={loadChecks} />
 
-            {/* Actions */}
-            <div className="mt-auto flex gap-2 pt-4 border-t">
-                {editOpen ? (
+            <div className={cn(
+                "flex flex-col gap-2 @sm:flex-row",
+                isPanel && "mt-auto border-t pt-4" 
+            )}>
+                {editing ? (
                     <>
-                        <Button variant="outline" size="sm" className="cursor-pointer" onClick={() => setEditOpen(false)}>
-                            Annuler
-                        </Button>
-                        <Button variant="default" size="sm" className="cursor-pointer" onClick={handleSave}>
-                            Enregistrer
-                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => setEditing(false)}>Annuler</Button>
+                        <Button size="sm" onClick={save}>Enregistrer</Button>
                     </>
                 ) : (
                     <>
-                        {/* Boutton supprimer */}
-                        <Button variant="destructive" size="sm" className="cursor-pointer" onClick={() => setConfirmOpen(true)}>
+                        <Button variant="outline" size="sm" onClick={() => setEditing(true)}>Modifier</Button>
+                        <Button variant="destructive" size="sm" onClick={() => setConfirmOpen(true)}>
                             Supprimer
                         </Button>
-                        <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-                            <DialogContent>
-                                <DialogHeader>
-                                    <DialogTitle>Supprimer ce service ?</DialogTitle>
-                                    <DialogDescription>
-                                        Vous êtes sur le point de supprimer <strong>{service.service.name}</strong>. Cette action est irréversible.
-                                    </DialogDescription>
-                                </DialogHeader>
-                                <DialogFooter className="mt-2">
-                                    <Button variant="outline" className="cursor-pointer" onClick={() => setConfirmOpen(false)}>
-                                        Annuler
-                                    </Button>
-                                    <Button variant="destructive" className="cursor-pointer" onClick={() => handleDelete(service.service.id)}>
-                                        Supprimer
-                                    </Button>
-                                </DialogFooter>
-                            </DialogContent>
-                        </Dialog>
-                        <Button variant="outline" size="sm" className="cursor-pointer" onClick={() => setEditOpen(true)}>
-                            Modiffier
-                        </Button>
                     </>
-                )
-
-                }
-
-
+                )}
             </div>
+
+            {/* Le seul modal légitime de la page : supprimer DOIT interrompre. */}
+            <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Supprimer ce service ?</DialogTitle>
+                        <DialogDescription>
+                            <strong>{s.name}</strong> sera supprimé définitivement.
+                            Cette action est irréversible.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter className="mt-2 flex-col gap-2 sm:flex-row">
+                        <Button variant="outline" onClick={() => setConfirmOpen(false)}>Annuler</Button>
+                        <Button variant="destructive" onClick={remove}>Supprimer</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
 
-function InfoItem({ label, value, mono = false }: {
-    label: string;
-    value: string;
-    mono?: boolean;
+function ChecksList({
+    checks, error, onRetry,
+}: { checks: MonotoringChecksResponse[]; error: string | null; onRetry: () => void }) {
+    return (
+        <section>
+            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Derniers checks
+            </h3>
+
+            {error ? (
+                <div className="rounded-lg border border-destructive/30 bg-background p-3 text-sm">
+                    <p className="mb-2 text-destructive">{error}</p>
+                    <Button variant="outline" size="sm" onClick={onRetry}>Réessayer</Button>
+                </div>
+            ) : checks.length === 0 ? (
+                <p className="rounded-lg border bg-background p-3 text-sm text-muted-foreground">
+                    Aucun check enregistré.
+                </p>
+            ) : (
+                <ul className="divide-y rounded-lg border bg-background">
+                    {checks.map((c) => (
+                        <li key={c.id}
+                            className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 p-3 text-sm">
+                            <span className="whitespace-nowrap text-muted-foreground">
+                                {new Date(c.timestamp).toLocaleString("fr-FR", {
+                                    dateStyle: "short", timeStyle: "short",
+                                })}
+                            </span>
+                            <span className="flex items-center gap-3">
+                                <StatusBadge status={c.status} />
+                                <span className="tabular-nums">{formatLatency(c.latencyMs)}</span>
+                                <span className="tabular-nums text-muted-foreground">{c.statusCode ?? "—"}</span>
+                            </span>
+                        </li>
+                    ))}
+                </ul>
+            )}
+        </section>
+    );
+}
+
+// Create
+
+function AddServiceDialog({
+    onCreated, onError,
+}: { onCreated: () => void; onError: (message: string) => void }) {
+    const [form, setForm] = useState<CreateServiceRequest>(EMPTY_SERVICE);
+
+    const set = <K extends keyof CreateServiceRequest>(key: K, value: CreateServiceRequest[K]) =>
+        setForm((f) => ({ ...f, [key]: value }));
+
+    const submit = (e: React.FormEvent) => {
+        e.preventDefault();
+        api.services.saveNewService(form)
+            .then((created) => {
+                if (!created) return onError("La création a échoué. Réessayez.");
+                setForm(EMPTY_SERVICE);
+                onCreated();
+            })
+            .catch((err) => onError(err.message));
+    };
+
+    return (
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+            <DialogHeader>
+                <DialogTitle>Nouveau service</DialogTitle>
+                <DialogDescription>Renseignez les informations du service à surveiller.</DialogDescription>
+            </DialogHeader>
+
+            <form onSubmit={submit}>
+                <FieldGroup className="gap-4">
+                    <Field>
+                        <FieldLabel htmlFor="name">Nom</FieldLabel>
+                        <Input id="name" required value={form.name}
+                            onChange={(e) => set("name", e.target.value)} />
+                    </Field>
+
+                    <Field>
+                        <FieldLabel htmlFor="type">Type</FieldLabel>
+                        <Select value={form.type} onValueChange={(v) => set("type", v as ServiceType)}>
+                            <SelectTrigger id="type" className="w-full">
+                                <SelectValue placeholder="Choisir un type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {serviceTypeSelect.map((i) => (
+                                    <SelectItem key={i.value} value={i.value}>{i.label}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </Field>
+
+                    <Field>
+                        <FieldLabel htmlFor="target">Cible</FieldLabel>
+                        <Input id="target" required value={form.target}
+                            onChange={(e) => set("target", e.target.value)} />
+                    </Field>
+
+                    <div className="flex items-center gap-3">
+                        <Switch id="enabled" checked={form.enabled}
+                            onCheckedChange={(c) => set("enabled", c)} />
+                        <Label htmlFor="enabled">Activer la surveillance</Label>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                        <NumberField id="intervalSeconds" label="Intervalle (s)"
+                            value={form.intervalSeconds} onValue={(v) => set("intervalSeconds", v)} />
+                        <NumberField id="timeoutMs" label="Timeout (ms)"
+                            value={form.timeoutMs} onValue={(v) => set("timeoutMs", v)} />
+                        <NumberField id="failureThreshold" label="Seuil d’échec" min={0} max={10}
+                            value={form.failureThreshold} onValue={(v) => set("failureThreshold", v)} />
+                    </div>
+                </FieldGroup>
+
+                <DialogFooter className="mt-6">
+                    <Button type="submit">Créer le service</Button>
+                </DialogFooter>
+            </form>
+        </DialogContent>
+    );
+}
+
+// Helper
+
+function NumberField({
+    id, label, value, onValue, min, max,
+}: {
+    id: string; label: string; value: number;
+    onValue: (value: number) => void; min?: number; max?: number;
 }) {
     return (
-        <div>
-            <p className="text-xs text-muted-foreground mb-0.5">{label}</p>
-            <p className={`text-sm font-medium ${mono ? 'font-mono' : ''}`}>{value}</p>
+        <Field>
+            <FieldLabel htmlFor={id}>{label}</FieldLabel>
+            <Input id={id} type="number" required min={min} max={max} value={value}
+                onChange={(e) => {
+                    const parsed = Number.parseInt(e.target.value, 10);
+                    if (!Number.isNaN(parsed)) onValue(parsed);
+                }} />
+        </Field>
+    );
+}
+
+function Info({
+    label, value, mono = false, className,
+}: { label: string; value: string; mono?: boolean; className?: string }) {
+    return (
+        <div className={cn("min-w-0", className)}>
+            <p className="mb-0.5 text-xs text-muted-foreground">{label}</p>
+            <p className={cn("break-all text-sm font-medium", mono && "font-mono")}>{value}</p>
         </div>
     );
 }

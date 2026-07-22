@@ -23,6 +23,8 @@ import {
     type LucideIcon,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
 type StatusFilter = "all" | "open" | "resolved";
 
@@ -41,6 +43,7 @@ function relativeTime(value: string) {
 }
 
 export default function IncidentsPage() {
+    const isMobile = useIsMobile();
     const [incidents, setIncidents] = useState<incidentsResponse[]>([]);
     const [selectedIncident, setSelectedIncident] = useState<incidentsResponse | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -81,6 +84,7 @@ export default function IncidentsPage() {
     }, [incidents, statusFilter, query]);
 
     const hasPanel = Boolean(selectedIncident);
+    const dockedPanel = hasPanel && !isMobile;
 
     const handleIncidentUpdated = (updated: incidentsResponse) => {
         setIncidents((prev) => prev.map((i) => (i.id === updated.id ? updated : i)));
@@ -90,10 +94,10 @@ export default function IncidentsPage() {
     };
 
     return (
-        <div className="flex h-[calc(100vh-40px)]">
-            <div className={`flex min-w-0 flex-col transition-all duration-300 ${hasPanel ? "w-2/5" : "w-full"}`}>
+        <div className="flex h-[calc(100dvh-3.5rem)] md:h-[calc(100vh-40px)]">
+            <div className={`flex min-w-0 flex-col transition-all duration-300 ${dockedPanel ? "w-2/5" : "w-full"}`}>
                 {/* Header */}
-                <div className="space-y-4 p-6 pb-4">
+                <div className="space-y-4 p-4 pb-4 sm:p-6 sm:pb-4">
                     <div className="flex items-center justify-between gap-4">
                         <div className="flex items-center gap-3">
                             <span className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
@@ -154,7 +158,7 @@ export default function IncidentsPage() {
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 overflow-auto px-6 pb-6">
+                <div className="flex-1 overflow-auto px-4 pb-4 sm:px-6 sm:pb-6">
                     {error ? (
                         <div className="overflow-hidden rounded-lg border">
                             <table className="w-full text-sm">
@@ -171,7 +175,7 @@ export default function IncidentsPage() {
                         </div>
                     ) : filteredIncidents.length === 0 ? (
                         <EmptyState filtered={Boolean(query) || statusFilter !== "all"} />
-                    ) : hasPanel ? (
+                    ) : isMobile || dockedPanel ? (
                         <div className="space-y-2">
                             {filteredIncidents.map((incident) => (
                                 <IncidentCard
@@ -237,7 +241,7 @@ export default function IncidentsPage() {
                 </div>
             </div>
 
-            {selectedIncident && (
+            {selectedIncident && !isMobile && (
                 <div className="w-3/5 overflow-auto border-l p-6 duration-300 animate-in fade-in-0 slide-in-from-right-4">
                     <IncidentDetailPanel
                         incident={selectedIncident}
@@ -245,6 +249,28 @@ export default function IncidentsPage() {
                         onUpdated={handleIncidentUpdated}
                     />
                 </div>
+            )}
+
+            {isMobile && (
+                <Sheet
+                    open={Boolean(selectedIncident)}
+                    onOpenChange={(open) => {
+                        if (!open) setSelectedIncident(null);
+                    }}
+                >
+                    <SheetContent side="bottom" className="h-[88dvh] overflow-y-auto rounded-t-xl p-4">
+                        <SheetHeader className="sr-only">
+                            <SheetTitle>Incident details</SheetTitle>
+                        </SheetHeader>
+                        {selectedIncident && (
+                            <IncidentDetailPanel
+                                incident={selectedIncident}
+                                onClose={() => setSelectedIncident(null)}
+                                onUpdated={handleIncidentUpdated}
+                            />
+                        )}
+                    </SheetContent>
+                </Sheet>
             )}
         </div>
     );

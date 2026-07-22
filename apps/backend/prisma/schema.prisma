@@ -76,6 +76,9 @@ enum CheckStatus {
   UP
   DOWN
   TIMEOUT
+  UNKNOWN
+  NO_RESPONSE
+  NEW
 }
 
 // =====================================================
@@ -111,4 +114,13 @@ model UserContact {
 enum ContactType {
   EMAIL
   DISCORD
+}
+
+// Table to store configuration for each notification channel (e.g. SMTP server settings for email, Discord bot token, etc.)
+model NotificationChannelConfig {
+  id        String      @id @default(cuid())
+  type      ContactType
+  config    Json
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
 }

@@ -13,11 +13,27 @@ export class ServicesRepository {
         });
     }
 
+    /**
+     *  Allows to insert a new service into the database. This method is useful for adding new services to be monitored by the system.
+     * @param dto An object containing the details of the service to be created, including its name, type, interval, timeout, and other relevant information.
+     * @return The newly created service object if the operation is successful, or an error message if there is an issue during the creation process.
+     */
     async insertNewService(dto: CreateServiceDto) {
         try {
-            return await this.prisma.service.create({
-                data: dto
+            // Insert the new service into the database
+            const addedService = await this.prisma.service.create({
+                data: dto,
             });
+            // Create service state for the newly added service
+            await this.prisma.serviceState.create({
+                data: {
+                    serviceId: addedService.id,
+                    status: 'NEW', // Initial status for a new service
+                    latencyMs: 0,
+                },
+            });
+            return addedService;
+            
         } catch (error) {
             console.log('Error while creating service', error);
             return { message: 'Error while creating service' };

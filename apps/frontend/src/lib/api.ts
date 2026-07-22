@@ -72,7 +72,58 @@ export type MonotoringChecksResponse = {
     timestamp: string;
 }
 
+/** Response payload for Discord webhook settings. */
+export type DiscordConfig = {
+    webhookUrl: string;
+    enabled: boolean;
+}
 
+/** Response payload for SMTP settings. */
+export type EmailConfig = {
+    smtpHost: string;
+    smtpPort: number;
+    smtpUsernameFrom: string;
+    smtpPassword: string;
+    recipientEmail: string;
+    enabled: boolean;
+}
+export type EmailFormState = EmailConfig & { id?: string; type: "EMAIL" };
+export type DiscordFormState = DiscordConfig & { id?: string; type: "DISCORD" };
+
+/** Union type for notification channel settings. */
+export type NotificationChannelSettings =
+    | { id: string; type: "DISCORD"; config: DiscordConfig }
+    | { id: string; type: "EMAIL"; config: EmailConfig };
+
+
+/** Union type for notification channel settings. */
+export type TypeChannelsAvailable =
+    "DISCORD" |
+    "EMAIL";
+
+
+export type CreateServiceRequest = {
+    id?: string;
+    name: string;
+    type: ServiceType;
+    target: string;
+    intervalSeconds: number;
+    timeoutMs: number;
+    failureThreshold: number;
+    enabled: boolean;
+}
+
+export type ServiceType =
+    "DOCKER" |
+    "HTTP" |
+    "TCP" |
+    "PING";
+export const serviceTypeSelect: { value: ServiceType, label: string }[] = [
+    { value: "DOCKER", label: "Docker" },
+    { value: "HTTP", label: "HTTP" },
+    { value: "TCP", label: "TCP" },
+    { value: "PING", label: "Ping" }
+]
 
 /**
  * Lightweight typed API client for the monolith backend.
@@ -113,16 +164,13 @@ export const api = {
             return res.json() as Promise<ServicesCardInfo[]>
         }),
         /** Creates a new monitored service. */
-        saveNewService: (service: { name: string; type: string; target: string; intervalSeconds: number; timeoutMs: number; failureThreshold: number; enabled: boolean }) => fetch(`${BASE_URL}/services`, {
+        saveNewService: (service: CreateServiceRequest): Promise<ServicesCardInfo | null> => fetch(`${BASE_URL}/services`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
             },
             body: JSON.stringify(service),
-        }).then(res => {
-            if (!res.ok) throw new Error(`HTTP ${res.status} `);
-            return res.json();
-        }),
+        }).then((res) => handle(res)),
         /** Deletes a service by id. */
         delete: (id: string) => fetch(`${BASE_URL}/services/${id}`, {
             method: "DELETE",
@@ -189,5 +237,58 @@ export const api = {
             if (!res.ok) throw new Error(`HTTP ${res.status} `);
             return res.json() as Promise<MonotoringChecksResponse[]>
         }),
+    },
+    notifications: {
+        getChannels: () => fetch(`${BASE_URL}/notifications`).then(res => {
+            if (!res.ok) throw new Error(`HTTP ${res.status} `);
+            return res.json() as Promise<NotificationChannelSettings[]>
+        }),
+        getChannel: ({ id }: { id: string }) => fetch(`${BASE_URL}/notifications/${id}`).then(res => {
+            if (!res.ok) throw new Error(`HTTP ${res.status} `);
+            return res.json() as Promise<NotificationChannelSettings>
+        }),
+        createChannels: <T extends { id?: string, enabled?: boolean }>({ type, channels }: { type: TypeChannelsAvailable, channels: T }) => fetch(`${BASE_URL}/notifications`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ data: { type, ...channels } }),
+        }).then(async res => {
+            if (!res.ok) {
+                const body = await res.text();
+                throw new Error(`HTTP ${res.status} - ${body}`);
+            }
+            return res.json() as Promise<NotificationChannelSettings>;
+        }),
+        updateChannels: <T extends { enabled?: boolean }>({ id, channels }: { id: string, channels: T }) =>
+            fetch(`${BASE_URL}/notifications/${id}`, {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ data: { ...channels } }),
+            }).then((res) => handle(res)),
+        deleteChannels: ({ id }: { id: string }) => fetch(`${BASE_URL}/notifications/${id}`, {
+            method: "DELETE",
+            headers: {
+                "Content-Type": "application/json",
+            },
+        }).then((res) => handle(res)),
+        testNotification: ({ id }: { id: string }) => fetch(`${BASE_URL}/notifications/${id}/test`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+        }).then((res) => handle(res)),
+    },
+}
+
+
+async function handle<T>(res: Response): Promise<T | null> {
+    if (!res.ok) {
+        const body = await res.text().catch(() => "");
+        throw new Error(`HTTP ${res.status}${body ? ` - ${body}` : ""}`)
     }
+    const text = await res.text();
+    return text ? (JSON.parse(text) as T) : null;
 }
