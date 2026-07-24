@@ -1,6 +1,6 @@
 ## ⚠️ Work in progress
 
-This version requires manual configuration and is not yet recommended for production use.
+This version requires manual configuration.
 A simpler setup with guided configuration is planned for the next release.
 
 ### Current limitations
